@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">镜隙</string>
+    <string name="chat_settings_call_history">历史通话</string>
+    <string name="title_api_settings">API 设置</string>
+    <string name="title_data_settings">数据管理</string>
+    
+    <string name="enable_image_gen">启用生图功能</string>
+    <string name="image_api_endpoint">生图 API Endpoint</string>
+    <string name="image_api_key">生图 API Key</string>
+    <string name="image_api_model">生图 API 模型</string>
+
+    <string name="announcement_title">欢迎使用与免责声明</string>
+    <string name="announcement_content"><![CDATA[# 欢迎使用镜隙 App\n\n本应用是一款**完全本地化**的 AI 对话工具，仅供**年满十八周岁及以上**的用户用于个人娱乐与交流。\n\n本软件所使用的 AI 生成模型、角色人设、对话设定等**均需用户自行配置或定义**，软件本身**不提供任何节点或 API**。所有生成的文字、图像及其他内容均由用户自行配置的模型生成，**不代表本应用的立场、观点或建议**。\n\n本软件**不配置任何服务器或云服务**，所有数据均存储于用户本地设备。软件**不会获取、收集或上传任何隐私信息**。\n\n本软件仅上传至 **GitHub** 进行分享，不会通过其他任何渠道分发。允许**二次传播与二次修改**，使用时请**标明原作者**。\n\n---\n\n## 免责声明\n\n1. **年龄限制**\n   本应用仅面向十八周岁及以上的用户。使用即默认您已满足该年龄要求。\n\n2. **内容责任**\n   请勿输入或生成任何违法、违规、侵权、暴力、仇恨或不当的内容。您应对自己的输入行为和生成结果负全部责任。\n\n3. **生成内容**\n   本软件不提供任何模型、节点或 API，生成内容完全取决于用户自行配置的模型与设定。我们不保证生成内容的准确性、完整性、及时性或合法性，所有内容仅供参考，请勿作为专业建议或决策依据。\n\n4. **第三方模型与配置**\n   用户自行配置的 AI 模型、API 或节点均为第三方服务，其使用可能受该第三方的服务条款约束。本软件不对任何第三方模型的内容、服务可用性或合规性承担责任。请确保您配置的角色人设、模型等不侵犯他人知识产权、肖像权或其他合法权益。\n\n5. **隐私与数据**\n   本软件不配置服务器或云服务，所有对话数据与配置信息均存储在您的本地设备中。本软件不会获取、收集或上传任何个人信息。请自行妥善保管您的设备与数据，我们不承担因设备丢失、数据损坏或泄露引发的任何责任。\n\n6. **风险承担**\n   使用本应用即表示您已充分理解并同意，自行承担使用过程中可能产生的一切风险及后果。\n\n7. **条款更新**\n   本免责声明可能不定期更新，继续使用即视为接受更新后的条款。\n\n---\n\n## 联系我们\n\n如有任何疑问、反馈或侵权举报，欢迎加入答疑 QQ 群：1106374291\n\n---\n\n请文明使用，共同营造理性、友善的交流环境。]]></string>
+    <string name="announcement_show_always">每次都显示</string>
+    <string name="announcement_hide_today">当日不再显示</string>
+    <string name="announcement_hide_until_update">下次版本更新前不再显示</string>
+    <string name="announcement_confirm_wait">请阅读 %1$ds</string>
+    <string name="announcement_confirm_ready">同意并继续</string>
+</resources>

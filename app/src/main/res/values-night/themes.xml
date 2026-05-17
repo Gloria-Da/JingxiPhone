@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    
+    <style name="Theme.JingxiPhone" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorCardBackground">@color/white_card_bg</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
+        <item name="colorOnPrimary">@color/text_brown</item>
+        <item name="colorSecondary">@color/colorAccent</item>
+        <item name="colorSecondaryVariant">@color/colorAccent</item>
+        <item name="colorOnSecondary">@color/text_brown</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowBackground">@color/bg_off_white</item>
+        <item name="android:windowAnimationStyle">@style/JingxiWindowAnimation</item>
+        <item name="colorTextPrimary">@color/text_primary</item>
+        <item name="colorTextSecondary">@color/text_secondary</item>
+        <item name="colorDivider">@color/divider_color</item>
+        <item name="colorBackground">@color/colorBackground</item>
+        <item name="colorPinnedBackground">#1AFFFFFF</item>
+        <item name="colorBubbleLeft">@color/bubble_left_dark</item>
+        <item name="colorBubbleRight">@color/bubble_right_dark</item>
+    </style>
+
+    <style name="Theme.JingxiPhone.Yellow" parent="Theme.JingxiPhone">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryDark</item>
+        <item name="colorSecondary">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/colorBackground</item>
+        <item name="colorCardBackground">@color/yellow_card_bg</item>
+        <item name="colorBackground">@color/colorBackground</item>
+        <item name="colorPinnedBackground">#14000000</item>
+        <item name="colorBubbleLeft">@color/white</item>
+        <item name="colorBubbleRight">@color/bubble_right_yellow</item>
+    </style>
+
+    <style name="Theme.JingxiPhone.Pink" parent="Theme.JingxiPhone">
+        <item name="colorPrimary">@color/pink_primary</item>
+        <item name="colorPrimaryVariant">@color/pink_primary_dark</item>
+        <item name="colorSecondary">@color/pink_accent</item>
+        <item name="android:windowBackground">@color/pink_bg</item>
+        <item name="colorCardBackground">@color/pink_card_bg</item>
+        <item name="colorBackground">@color/theme_pink_bg</item>
+        <item name="colorPinnedBackground">#14000000</item>
+        <item name="colorBubbleLeft">@color/white</item>
+        <item name="colorBubbleRight">@color/bubble_right_pink</item>
+    </style>
+
+    <style name="Theme.JingxiPhone.Blue" parent="Theme.JingxiPhone">
+        <item name="colorPrimary">@color/blue_primary</item>
+        <item name="colorPrimaryVariant">@color/blue_primary_dark</item>
+        <item name="colorSecondary">@color/blue_accent</item>
+        <item name="android:windowBackground">@color/blue_bg</item>
+        <item name="colorCardBackground">@color/blue_card_bg</item>
+        <item name="colorBackground">@color/theme_blue_bg</item>
+        <item name="colorPinnedBackground">#14000000</item>
+        <item name="colorBubbleLeft">@color/white</item>
+        <item name="colorBubbleRight">@color/bubble_right_blue</item>
+    </style>
+
+    <style name="Theme.JingxiPhone.White" parent="Theme.JingxiPhone">
+        <item name="colorPrimary">@color/white_primary</item>
+        <item name="colorPrimaryVariant">@color/white_primary_dark</item>
+        <item name="colorSecondary">@color/white_accent</item>
+        <item name="android:windowBackground">@color/white_bg</item>
+        <item name="colorCardBackground">@color/white_card_bg</item>
+        <item name="colorBackground">@color/white_bg</item>
+        <item name="colorPinnedBackground">#14000000</item>
+        <item name="colorBubbleLeft">@color/white</item>
+        <item name="colorBubbleRight">@color/bubble_right_white</item>
+    </style>
+
+    <style name="Theme.JingxiPhone.Dark" parent="Theme.JingxiPhone">
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorPrimaryVariant">@color/dark_primary_dark</item>
+        <item name="colorSecondary">@color/dark_accent</item>
+        <item name="android:windowBackground">@color/dark_bg</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorCardBackground">@color/dark_card_bg</item>
+        <item name="colorTextPrimary">#FFFFFF</item>
+        <item name="colorTextSecondary">#E0E0E0</item>
+        <item name="colorDivider">#424242</item>
+        <!-- Fix EditText background color in dark mode -->
+        <item name="colorControlNormal">#80FFFFFF</item>
+        <item name="colorControlActivated">@color/dark_primary</item>
+        <item name="colorControlHighlight">@color/dark_primary</item>
+        <item name="android:editTextColor">#FFFFFF</item>
+        <item name="android:textColorHint">#80FFFFFF</item>
+        <item name="colorBackground">@color/theme_dark_bg</item>
+        <item name="colorPinnedBackground">#1AFFFFFF</item>
+        <item name="colorBubbleLeft">@color/bubble_left_dark</item>
+        <item name="colorBubbleRight">@color/bubble_right_dark</item>
+    </style>
+
+    <style name="JingxiWindowAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
+    </style>
+</resources>

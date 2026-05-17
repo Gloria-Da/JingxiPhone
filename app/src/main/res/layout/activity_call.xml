@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="#1C1C1E"
+    android:fitsSystemWindows="true"> <!-- 深色背景 -->
+
+    <!-- 顶部区域：包含悬浮窗按钮和头像状态 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="60dp"
+            android:paddingBottom="24dp">
+
+        <ImageView
+            android:id="@+id/ivCallAvatar"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_launcher_round"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/tvCallName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="联系人名称"
+            android:textSize="28sp"
+            android:textColor="@color/white"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCallStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="正在呼叫..."
+            android:textSize="16sp"
+            android:textColor="#A0A0A0" />
+            
+        <TextView
+            android:id="@+id/tvCallDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="00:00"
+            android:textSize="16sp"
+            android:textColor="#A0A0A0"
+            android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- 最小化按钮 -->
+        <ImageView
+            android:id="@+id/ivMinimize"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="start|top"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="40dp"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_crop"
+            app:tint="#A0A0A0"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:elevation="10dp" />
+
+    </FrameLayout>
+
+    <!-- 滚动字幕区域 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCallSubtitles"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingHorizontal="24dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:layout_marginBottom="20dp" />
+
+    <!-- 底部操作区域 -->
+    <LinearLayout
+        android:id="@+id/llCallActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingBottom="60dp"
+        android:paddingTop="20dp">
+
+        <!-- 拒绝接听 / 挂断 -->
+        <LinearLayout
+            android:id="@+id/btnHangUp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:background="@drawable/bg_btn_rounded"
+                android:backgroundTint="#FF3B30"
+                android:padding="16dp" />
+
+            <TextView
+                android:id="@+id/tvHangUpText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="挂断"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- 接听（仅来电且未接通时显示） -->
+        <LinearLayout
+            android:id="@+id/btnAccept"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@android:drawable/ic_menu_call"
+                android:background="@drawable/bg_btn_rounded"
+                android:backgroundTint="#34C759"
+                android:padding="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="接听"
+                android:textColor="@color/text_gray"
+                android:textSize="14sp" />
+        </LinearLayout>
+        
+        <!-- 麦克风开关（接通后显示） -->
+        <LinearLayout
+            android:id="@+id/btnSpeak"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivSpeakIcon"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                android:background="@drawable/bg_btn_rounded"
+                android:backgroundTint="@color/main_brown"
+                android:padding="16dp" />
+
+            <TextView
+                android:id="@+id/tvSpeakText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="麦克风已开"
+                android:textColor="#A0A0A0"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 接通后的文字交流入口 (可选) -->
+    <LinearLayout
+        android:id="@+id/llKeyboardInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+        
+        <EditText
+            android:id="@+id/etCallInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="说点什么..."
+            android:background="@drawable/bg_edit_text_rounded"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:imeOptions="actionSend"
+            android:inputType="text" />
+            
+        <Button
+            android:id="@+id/btnCallSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="发送"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/main_brown" />
+    </LinearLayout>
+
+</LinearLayout>

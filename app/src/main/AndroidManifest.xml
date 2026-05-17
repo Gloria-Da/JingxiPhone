@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.yoyo.jingxi">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <application
+        android:name=".JingxiApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.JingxiPhone">
+        <activity
+            android:name=".ui.activity.DesktopActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ui.activity.GuideActivity" />
+        <activity android:name=".ui.activity.AddFriendActivity" />
+        <activity android:name=".ui.activity.ChatMainActivity" />
+        <activity android:name=".ui.activity.SettingsActivity" />
+        <activity android:name=".ui.activity.ApiSettingsActivity" />
+        <activity android:name=".ui.activity.VoiceSettingsActivity" />
+        <activity android:name=".ui.activity.DataSettingsActivity" />
+        <activity android:name=".ui.activity.MessageSettingsActivity" />
+        <activity android:name=".ui.activity.AddPersonaActivity" />
+        <activity android:name=".ui.activity.ChatActivity"
+                  android:launchMode="singleTask" />
+        <activity android:name=".ui.activity.CreateChatActivity" />
+        <activity android:name=".ui.activity.MemoryActivity" />
+        <activity android:name=".ui.activity.ScheduleActivity" />
+        <activity android:name=".ui.activity.WorldbookActivity" />
+        <activity android:name=".ui.activity.WorldbookEditActivity" />
+        <activity android:name=".ui.activity.ChatSettingsActivity" />
+        <activity android:name=".ui.activity.MemoActivity" />
+        <activity android:name=".ui.activity.LogActivity" />
+        <activity android:name=".ui.activity.AddMomentActivity" />
+        <activity android:name=".ui.activity.EmojiManageActivity" />
+        <activity android:name=".ui.activity.RelationshipNetworkActivity"
+                  android:label="人际网络"
+                  android:theme="@style/Theme.JingxiPhone" />
+        <activity android:name=".ui.activity.CallActivity"
+                  android:launchMode="singleTask"
+                  android:windowSoftInputMode="adjustResize"
+                  android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity android:name=".ui.activity.CallHistoryActivity" />
+        <activity android:name=".ui.activity.CallHistoryDetailActivity" />
+        <activity android:name=".ui.activity.ThemeSettingsActivity" />
+        <activity
+            android:name=".ui.activity.MomentNotificationsActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name=".ui.activity.ImageDetailActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
+        <activity
+            android:name=".ui.activity.WeatherActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
+        <service android:name=".service.AiReplyService"
+                 android:foregroundServiceType="dataSync"
+                 android:exported="false" />
+
+        <service android:name=".service.CallForegroundService"
+                 android:foregroundServiceType="microphone"
+                 android:exported="false" />
+
+        <service android:name=".service.ImageGenForegroundService"
+                 android:foregroundServiceType="dataSync"
+                 android:exported="false" />
+    </application>
+
+</manifest>

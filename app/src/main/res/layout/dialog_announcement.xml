@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_edit_text_rounded">
+
+    <TextView
+        android:id="@+id/tvAnnouncementTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/announcement_title"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="?attr/colorPrimary"
+        android:layout_marginBottom="16dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fadeScrollbars="false"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvAnnouncementContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/announcement_content"
+            android:textSize="14sp"
+            android:lineSpacingExtra="4dp"
+            android:textColor="?attr/colorOnSurface" />
+    </ScrollView>
+
+    <RadioGroup
+        android:id="@+id/rgAnnouncementOptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
+
+        <RadioButton
+            android:id="@+id/rbShowAlways"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/announcement_show_always"
+            android:checked="true" />
+
+        <RadioButton
+            android:id="@+id/rbHideToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/announcement_hide_today" />
+
+        <RadioButton
+            android:id="@+id/rbHideUntilUpdate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/announcement_hide_until_update" />
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/btnAnnouncementConfirm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/announcement_confirm_wait"
+        android:enabled="false"
+        android:backgroundTint="?attr/colorPrimary"
+        android:textColor="@android:color/white" />
+
+</LinearLayout>
