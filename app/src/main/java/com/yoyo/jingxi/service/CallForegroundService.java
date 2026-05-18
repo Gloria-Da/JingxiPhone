@@ -46,15 +46,14 @@ public class CallForegroundService extends Service {
                 .setContentIntent(pendingIntent)
                 .build();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
-            } catch (Exception e) {
-                // 回退到普通前台服务或无类型
+            } else {
                 startForeground(NOTIFICATION_ID, notification);
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return START_NOT_STICKY;

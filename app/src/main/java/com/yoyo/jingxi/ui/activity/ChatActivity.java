@@ -112,6 +112,8 @@ public class ChatActivity extends AppCompatActivity {
     private android.widget.TextView tvQuotePreview;
     private ImageView ivCloseQuote;
 
+    private Message pendingQuoteMsg;
+
     private AppDatabase db;
     private BroadcastReceiver messageUpdateReceiver = new BroadcastReceiver() {
         @Override
@@ -463,30 +465,30 @@ public class ChatActivity extends AppCompatActivity {
                         .centerCrop()
                         .into(ivChatBg);
                 }
-            if (com.yoyo.jingxi.utils.ThemeManager.isDarkMode(this)) {
-                ivChatBg.setColorFilter(android.graphics.Color.parseColor("#40000000"), android.graphics.PorterDuff.Mode.SRC_ATOP);
-            } else {
-                ivChatBg.clearColorFilter();
-            }
-        } else {
-            String bgPath = com.yoyo.jingxi.utils.ThemeManager.getBgImagePath(this);
-            if (bgPath != null && !bgPath.isEmpty()) {
-                ivChatBg.setVisibility(View.VISIBLE);
-                if (!isFinishing() && !isDestroyed()) {
-                    com.bumptech.glide.Glide.with(this.getApplicationContext())
-                        .load(android.net.Uri.parse(bgPath))
-                        .centerCrop()
-                        .into(ivChatBg);
-                }
                 if (com.yoyo.jingxi.utils.ThemeManager.isDarkMode(this)) {
                     ivChatBg.setColorFilter(android.graphics.Color.parseColor("#40000000"), android.graphics.PorterDuff.Mode.SRC_ATOP);
                 } else {
                     ivChatBg.clearColorFilter();
                 }
             } else {
-                ivChatBg.setVisibility(View.GONE);
+                String bgPath = com.yoyo.jingxi.utils.ThemeManager.getBgImagePath(this);
+                if (bgPath != null && !bgPath.isEmpty()) {
+                    ivChatBg.setVisibility(View.VISIBLE);
+                    if (!isFinishing() && !isDestroyed()) {
+                        com.bumptech.glide.Glide.with(this.getApplicationContext())
+                            .load(android.net.Uri.parse(bgPath))
+                            .centerCrop()
+                            .into(ivChatBg);
+                    }
+                    if (com.yoyo.jingxi.utils.ThemeManager.isDarkMode(this)) {
+                        ivChatBg.setColorFilter(android.graphics.Color.parseColor("#40000000"), android.graphics.PorterDuff.Mode.SRC_ATOP);
+                    } else {
+                        ivChatBg.clearColorFilter();
+                    }
+                } else {
+                    ivChatBg.setVisibility(View.GONE);
+                }
             }
-        }
         }
     }
     
@@ -495,6 +497,11 @@ public class ChatActivity extends AppCompatActivity {
         super.onDestroy();
         try {
             unregisterReceiver(messageUpdateReceiver);
+        } catch (IllegalArgumentException e) {
+            // ignore
+        }
+        try {
+            unregisterReceiver(aiReplyStatusReceiver);
         } catch (IllegalArgumentException e) {
             // ignore
         }
@@ -954,437 +961,19 @@ public class ChatActivity extends AppCompatActivity {
         clearQuote();
     }
 
-    private void requestAiReply() {
-        if (currentCharacter == null) {
-            Toast.makeText(this, "正在加载角色信息，请稍后再试", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        
-        String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-        if (TextUtils.isEmpty(apiKey)) {
-            Toast.makeText(this, "请先在桌面的设置应用中配置 OpenAI API KEY", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("对方正在输入中...");
-        }
-        
-        Intent serviceIntent = new Intent(this, com.yoyo.jingxi.service.AiReplyService.class);
-        serviceIntent.setAction(com.yoyo.jingxi.service.AiReplyService.ACTION_START_REPLY);
-        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_SESSION_ID, sessionId);
-        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_CHARACTER_ID, currentCharacter.id);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
-        // 发出请求后禁用发送按钮
-        btnSend.setEnabled(false);
-    }
-
-    private void performAiReplyRequest(String endpoint, String finalUrl, String apiKey, String model) {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            try {
-                int historyRounds = SpUtils.getInt("SETTING_HISTORY_ROUNDS", 80);
-                // 获取最近的消息作为上下文 (乘2因为一发一收算一轮)
-                List<Message> history = db.messageDao().getRecentMessagesBySessionIdSync(sessionId, historyRounds * 2);
-                // 因为取出来是降序(最新的在前面)，需要反转为升序
-                java.util.Collections.reverse(history);
-
-                String myName = currentMyPersona != null ? currentMyPersona.name : SpUtils.getString("MY_NAME", "我");
-                String myPersonaDesc = currentMyPersona != null ? currentMyPersona.persona : SpUtils.getString("MY_PERSONA", "普通人");
-
-                // 获取记忆
-                int memoryCallCount = SpUtils.getInt("SETTING_MEMORY_CALL_COUNT", 20);
-                List<com.yoyo.jingxi.data.entity.Memory> importantMemories = db.memoryDao().getImportantMemoriesSync(currentCharacter.id);
-                List<com.yoyo.jingxi.data.entity.Memory> normalMemories;
-                if (memoryCallCount > 0) {
-                    normalMemories = db.memoryDao().getNormalMemoriesSync(currentCharacter.id, memoryCallCount);
-                } else {
-                    normalMemories = db.memoryDao().getAllNormalMemoriesSync(currentCharacter.id);
-                }
-                
-                // Get pending memos
-                List<com.yoyo.jingxi.data.entity.Memo> pendingMemos = db.memoDao().getPendingMemosSync(currentCharacter.id);
-
-                // 尝试获取今天的日程
-                String scheduleContent = SpUtils.getString("SCHEDULE_CONTENT_" + currentCharacter.id, "");
-                
-                // 获取启用的世界书
-                List<com.yoyo.jingxi.data.entity.WorldbookEntry> allEnabled = db.worldbookDao().getAllEnabledEntriesSync();
-                String unselectedStr = SpUtils.getString("CHAT_WORLDBOOK_UNSELECTED_" + sessionId, "");
-                List<String> unselectedList = java.util.Arrays.asList(unselectedStr.split(","));
-                
-                List<com.yoyo.jingxi.data.entity.WorldbookEntry> worldbookEntries = new java.util.ArrayList<>();
-                for (com.yoyo.jingxi.data.entity.WorldbookEntry entry : allEnabled) {
-                    if (!unselectedList.contains(String.valueOf(entry.id))) {
-                        worldbookEntries.add(entry);
-                    }
-                }
-
-                // 获取人际关系网络
-                String relationshipContent = "";
-                if (SpUtils.getBoolean("RELATIONSHIP_NETWORK_ENABLED", true)) {
-                    List<com.yoyo.jingxi.data.entity.RelationshipNode> nodes = db.relationshipNodeDao().getAllNodesSync();
-                    List<com.yoyo.jingxi.data.entity.RelationshipEdge> edges = db.relationshipEdgeDao().getAllEdgesSync();
-                    if (nodes != null && !nodes.isEmpty() && edges != null && !edges.isEmpty()) {
-                        StringBuilder relBuilder = new StringBuilder();
-                        relBuilder.append("人物图鉴:\n");
-                        for (com.yoyo.jingxi.data.entity.RelationshipNode node : nodes) {
-                            relBuilder.append("- ").append(node.name);
-                            if (node.description != null && !node.description.isEmpty()) {
-                                relBuilder.append(" (").append(node.description).append(")");
-                            }
-                            relBuilder.append("\n");
-                        }
-                        relBuilder.append("相互关系:\n");
-                        for (com.yoyo.jingxi.data.entity.RelationshipEdge edge : edges) {
-                            com.yoyo.jingxi.data.entity.RelationshipNode source = null;
-                            com.yoyo.jingxi.data.entity.RelationshipNode target = null;
-                            for (com.yoyo.jingxi.data.entity.RelationshipNode n : nodes) {
-                                if (n.id.equals(edge.sourceNodeId)) source = n;
-                                if (n.id.equals(edge.targetNodeId)) target = n;
-                            }
-                            if (source != null && target != null) {
-                                relBuilder.append("- ").append(source.name).append(" -> ").append(target.name).append(" : ").append(edge.relation).append("\n");
-                            }
-                        }
-                        relationshipContent = relBuilder.toString();
-                    }
-                }
-                
-                // 获取近期动态
-                String momentsContent = "";
-                try {
-                    List<com.yoyo.jingxi.data.entity.Moment> recentMoments = db.momentDao().getRecentMomentsSync(5);
-                    if (recentMoments != null && !recentMoments.isEmpty()) {
-                        StringBuilder momentsBuilder = new StringBuilder();
-                        momentsBuilder.append("最近的朋友圈动态（供参考，可进行互动，但不强制要求）：\n");
-                        for (com.yoyo.jingxi.data.entity.Moment m : recentMoments) {
-                            momentsBuilder.append("- ").append(m.publisherName).append(": ").append(m.content).append(" (动态ID: ").append(m.id).append(")\n");
-                        }
-                        momentsContent = momentsBuilder.toString();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                // 获取可用表情包列表
-                List<com.yoyo.jingxi.data.entity.EmojiEntry> emojiEntries = db.emojiDao().getAllEmojisSync();
-                int maxAiMessages = SpUtils.getInt("CHAT_MAX_AI_MESSAGES_" + sessionId, 5);
-                OpenAiRequest request = aiManager.buildRequest(currentCharacter.persona, history, myName, myPersonaDesc, model, importantMemories, normalMemories, pendingMemos, scheduleContent, worldbookEntries, emojiEntries, false, relationshipContent, maxAiMessages, momentsContent);
-
-                aiManager.getApi().createChatCompletion(finalUrl, "Bearer " + apiKey, request).enqueue(new Callback<OpenAiResponse>() {
-                    @Override
-                    public void onResponse(Call<OpenAiResponse> call, Response<OpenAiResponse> response) {
-                        if (response.isSuccessful() && response.body() != null && response.body().choices != null && !response.body().choices.isEmpty() && response.body().choices.get(0) != null && response.body().choices.get(0).message != null && response.body().choices.get(0).message.content != null) {
-                            String rawContent = response.body().choices.get(0).message.content;
-                            handleAiReplies(rawContent);
-                        } else {
-                            showError("请求失败: " + response.code());
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<OpenAiResponse> call, Throwable t) {
-                        showError("网络错误: " + t.getMessage());
-                    }
-                });
-            } catch (Exception e) {
-                showError("内部错误: " + e.getMessage());
-            }
-        });
-    }
-
-    private void handleAiReplies(String rawContent) {
-        List<OpenAIManager.ReplyItem> replies = aiManager.parseMultiReplies(rawContent);
-        
-        Executors.newSingleThreadExecutor().execute(() -> {
-            long baseTime = System.currentTimeMillis();
-            for (int i = 0; i < replies.size(); i++) {
-                OpenAIManager.ReplyItem item = replies.get(i);
-
-                if ("call".equalsIgnoreCase(item.type)) {
-                    // AI 主动发起电话
-                    final String initialMsg = item.content;
-                    mainHandler.post(() -> {
-                        if (CallActivity.instance != null && !CallActivity.instance.isCallEnded()) {
-                            // Already in call, ignore
-                            Toast.makeText(ChatActivity.this, "您正在通话中，无法接听新来电", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        Intent intent = new Intent(ChatActivity.this, CallActivity.class);
-                        intent.putExtra("session_id", sessionId);
-                        intent.putExtra("is_incoming", true); // 接听来电
-                        intent.putExtra("initial_message", initialMsg);
-                        startActivityForResult(intent, 200); // 监听返回结果
-                    });
-                    continue; // 电话消息不在当前作为文字气泡展示，会跳转到 CallActivity
-                }
-                
-                if (item.revoke_id != null) {
-                    // AI wants to revoke a message
-                    Message msgToRevoke = db.messageDao().getMessageByIdSync(item.revoke_id);
-                    if (msgToRevoke != null && !msgToRevoke.isFromUser) {
-                        msgToRevoke.type = 99; // 撤回状态
-                        msgToRevoke.content = "对方撤回了一条消息";
-                        db.messageDao().update(msgToRevoke);
-                    }
-                    continue; // 撤回指令不作为新消息展示
-                }
-                
-                if ("important_memory".equalsIgnoreCase(item.type)) {
-                    // AI 判断并生成的重要记忆，拦截保存到记忆库，不展示在聊天记录里
-                    if ("delete".equalsIgnoreCase(item.action) && item.target_id != null) {
-                        com.yoyo.jingxi.data.entity.Memory existingMem = db.memoryDao().getMemoryByIdSync(item.target_id);
-                        if (existingMem != null && existingMem.characterId == currentCharacter.id) {
-                            db.memoryDao().delete(existingMem);
-                            android.util.Log.d("ChatActivity", "AI 删除了重要记忆: ID=" + item.target_id);
-                        }
-                    } else if ("edit".equalsIgnoreCase(item.action) && item.target_id != null && item.content != null && !item.content.trim().isEmpty()) {
-                        com.yoyo.jingxi.data.entity.Memory existingMem = db.memoryDao().getMemoryByIdSync(item.target_id);
-                        if (existingMem != null && existingMem.characterId == currentCharacter.id) {
-                            existingMem.content = item.content.trim();
-                            if (item.category != null && !item.category.trim().isEmpty()) {
-                                existingMem.category = item.category.trim();
-                            }
-                            db.memoryDao().update(existingMem);
-                            android.util.Log.d("ChatActivity", "AI 修改了重要记忆: ID=" + item.target_id);
-                        }
-                    } else if (("add".equalsIgnoreCase(item.action) || item.action == null) && item.content != null && !item.content.trim().isEmpty()) {
-                        com.yoyo.jingxi.data.entity.Memory mem = new com.yoyo.jingxi.data.entity.Memory();
-                        mem.characterId = currentCharacter.id;
-                        mem.content = item.content.trim();
-                        mem.timestamp = System.currentTimeMillis();
-                        mem.type = 1; // 1 表示由重要消息提取的核心记忆
-                        mem.starLevel = item.star > 0 ? item.star : 3;
-                        mem.category = (item.category != null && !item.category.trim().isEmpty()) ? item.category.trim() : "其他";
-                        db.memoryDao().insert(mem);
-                        android.util.Log.d("ChatActivity", "AI 提取了重要记忆并保存: " + item.content);
-                    }
-                    continue; // 拦截，不显示在聊天气泡中
-                }
-
-                if ("memo".equalsIgnoreCase(item.type)) {
-                    // AI 判断产生的备忘录/约定，拦截保存到备忘录库，不展示在聊天记录里
-                    if ("update_memo".equalsIgnoreCase(item.action) && item.target_id != null && item.status != null) {
-                        // MemoDao does not have getMemoById, using query or assuming we might need to add it, but it's simpler to just not do it or use a proper dao method. 
-                        // Wait, let me check MemoDao.java again. It doesn't have getMemoById. I should probably add it to MemoDao.java instead of changing this file here.
-                        // For now, I'll change it to use a query, but actually I can just add getMemoById to MemoDao.
-                        // I'll undo this block and modify MemoDao.
-                        com.yoyo.jingxi.data.entity.Memo existingMemo = db.memoDao().getMemoByIdSync(item.target_id);
-                        if (existingMemo != null && existingMemo.characterId == currentCharacter.id) {
-                            existingMemo.status = item.status;
-                            db.memoDao().update(existingMemo);
-                            android.util.Log.d("ChatActivity", "AI 更新了备忘录状态: ID=" + item.target_id + ", status=" + item.status);
-                        }
-                    } else if (("add".equalsIgnoreCase(item.action) || item.action == null) && item.content != null && !item.content.trim().isEmpty()) {
-                        com.yoyo.jingxi.data.entity.Memo memo = new com.yoyo.jingxi.data.entity.Memo();
-                        memo.characterId = currentCharacter.id;
-                        memo.content = item.content.trim();
-                        memo.targetDate = item.date; // 可能是 null
-                        memo.status = item.status != null ? item.status : 0; // 默认待完成
-                        memo.timestamp = System.currentTimeMillis();
-                        db.memoDao().insert(memo);
-                        android.util.Log.d("ChatActivity", "AI 创建了备忘录: " + item.content);
-                    }
-                    continue; // 拦截，不显示在聊天气泡中
-                }
-
-                if ("moment".equalsIgnoreCase(item.type) && currentCharacter != null) {
-                    com.yoyo.jingxi.data.entity.Moment moment = new com.yoyo.jingxi.data.entity.Moment();
-                    moment.publisherType = 1; // 1 for Character
-                    moment.publisherId = String.valueOf(currentCharacter.id);
-                    moment.publisherName = currentCharacter.name;
-                    moment.publisherAvatar = currentCharacter.avatarPath;
-                    moment.content = item.content;
-                    // 如果有时间字段可以考虑在这里解析，目前先用当前时间
-                    moment.timestamp = System.currentTimeMillis();
-                    long rowId = db.momentDao().insert(moment);
-                    moment.id = (int) rowId;
-                    com.yoyo.jingxi.utils.MomentSimulator.simulateInteraction(this, moment);
-                    continue;
-                }
-
-                if ("moment_interaction".equalsIgnoreCase(item.type) && currentCharacter != null) {
-                    if (item.moment_id != null && item.interaction_type != null) {
-                        if ("like".equalsIgnoreCase(item.interaction_type)) {
-                            // 检查是否已经点赞
-                            boolean hasLiked = false;
-                            for (com.yoyo.jingxi.data.entity.MomentLike l : db.momentLikeDao().getLikesForMomentSync(item.moment_id)) {
-                                if (String.valueOf(currentCharacter.id).equals(l.likerId)) {
-                                    hasLiked = true;
-                                    break;
-                                }
-                            }
-                            if (!hasLiked) {
-                                com.yoyo.jingxi.data.entity.MomentLike like = new com.yoyo.jingxi.data.entity.MomentLike();
-                                like.momentId = item.moment_id;
-                                like.likerId = String.valueOf(currentCharacter.id);
-                                like.likerName = currentCharacter.name;
-                                like.timestamp = System.currentTimeMillis();
-                                db.momentLikeDao().insert(like);
-                            }
-                        } else if ("comment".equalsIgnoreCase(item.interaction_type) && !TextUtils.isEmpty(item.content)) {
-                            com.yoyo.jingxi.data.entity.MomentComment comment = new com.yoyo.jingxi.data.entity.MomentComment();
-                            comment.momentId = item.moment_id;
-                            comment.authorId = String.valueOf(currentCharacter.id);
-                            comment.authorName = currentCharacter.name;
-                            comment.content = item.content;
-                            comment.timestamp = System.currentTimeMillis();
-                            db.momentCommentDao().insert(comment);
-                        }
-                    }
-                    continue;
-                }
-                
-                Message msg = new Message();
-                msg.sessionId = sessionId;
-                msg.characterId = currentSession != null ? currentSession.characterId : -1;
-                msg.content = item.content;
-                msg.isFromUser = false;
-                
-                msg.timestamp = baseTime + i * 1000L; // 模拟延迟
-                msg.quoteMessageId = item.quote_id != null ? item.quote_id : -1;
-                
-                // Map AI 'type' string to our Message type int
-                // 0: text, 1: voice, 2: emoji, 3: real image, 4: virtual image
-                if (item.content != null && item.content.contains("{\"command\"")) {
-                    handleInlineMomentCommand(item);
-                }
-                
-                if ("voice".equalsIgnoreCase(item.type)) {
-                    msg.type = 1;
-                    // 如果有voiceId配置，我们需要请求MiniMax语音
-                    if (currentCharacter != null && !android.text.TextUtils.isEmpty(currentCharacter.voiceId)) {
-                        String groupId = SpUtils.getString("MINIMAX_GROUP_ID", "");
-                        String apiKey = SpUtils.getString("MINIMAX_API_KEY", "");
-                        String model = SpUtils.getString("MINIMAX_MODEL", "speech-01-turbo");
-                        
-                        if (!android.text.TextUtils.isEmpty(apiKey)) {
-                            try {
-                        com.yoyo.jingxi.network.MiniMaxTtsRequest request = new com.yoyo.jingxi.network.MiniMaxTtsRequest(
-                                model, msg.content, currentCharacter.voiceId,
-                                currentCharacter.voicePitch, currentCharacter.voiceIntensity, currentCharacter.voiceTimbre, currentCharacter.soundEffect,
-                                currentCharacter.voiceSpeed > 0 ? currentCharacter.voiceSpeed : com.yoyo.jingxi.utils.SpUtils.getFloat("voice_speed", 1.0f),
-                                item.emotion
-                        );
-                        retrofit2.Response<com.yoyo.jingxi.network.MiniMaxTtsResponse> ttsResponse = aiManager.getMiniMaxApi().textToAudio("Bearer " + apiKey, request).execute();
-                                if (ttsResponse.isSuccessful() && ttsResponse.body() != null && ttsResponse.body().data != null && ttsResponse.body().data.audio != null && !android.text.TextUtils.isEmpty(ttsResponse.body().data.audio)) {
-                                    java.io.File audioFile = new java.io.File(getExternalCacheDir(), "voice_" + msg.timestamp + ".mp3");
-                                    // 解码 hex 字符串为 byte 数组
-                                    String hexAudio = ttsResponse.body().data.audio;
-                                    byte[] audioBytes = new byte[hexAudio.length() / 2];
-                                    for (int j = 0; j < audioBytes.length; j++) {
-                                        int index = j * 2;
-                                        int v = Integer.parseInt(hexAudio.substring(index, index + 2), 16);
-                                        audioBytes[j] = (byte) v;
-                                    }
-                                    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(audioFile)) {
-                                        fos.write(audioBytes);
-                                        msg.voiceUrl = audioFile.getAbsolutePath();
-                                    }
-                                } else {
-                                    android.util.Log.e("TTS", "MiniMax request failed: " + ttsResponse.code());
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } else if ("emoji".equalsIgnoreCase(item.type)) {
-                    msg.type = 2;
-                    // Try to find the exact emoji URL from database
-                    // Since item.content might be "[大笑]" or "大笑", we clean it up
-                    String cleanName = item.content != null ? item.content.replaceAll("\\[|\\]", "").replaceAll("emoji:", "").trim() : "";
-                    
-                    // If AI generated an emoji string that looks like a prompt (e.g. "[emoji:虚拟图片:意面酱炒制过程...]")
-                    // It likely mistook a virtual image generation prompt for an emoji.
-                    // Let's redirect this to virtual_image type.
-                    if (cleanName.startsWith("虚拟图片:") || cleanName.contains("图片:")) {
-                        msg.type = 4;
-                        msg.content = item.content;
-                        try {
-                            org.json.JSONObject descJson = new org.json.JSONObject();
-                            descJson.put("desc", item.content);
-                            String encodedDesc = android.net.Uri.encode(descJson.toString());
-                            msg.imageUrl = "virtual://" + encodedDesc;
-                        } catch (Exception e) {
-                            String encodedDesc = android.net.Uri.encode(item.content != null ? item.content : "");
-                            msg.imageUrl = "virtual://" + encodedDesc;
-                        }
-                    } else {
-                        List<EmojiEntry> emojiEntriesList = db.emojiDao().getEmojiByNameSync(cleanName);
-                        EmojiEntry emojiEntry = (emojiEntriesList != null && !emojiEntriesList.isEmpty()) ? emojiEntriesList.get(0) : null;
-                        if (emojiEntry != null) {
-                            msg.imageUrl = emojiEntry.imageUrl;
-                            msg.content = "[" + emojiEntry.name + "]";
-                        } else {
-                            msg.content = item.content; // if not found, just display the text
-                            msg.type = 0; // Fallback to text if emoji not found
-                        }
-                    }
-                } else if ("virtual_image".equalsIgnoreCase(item.type)) {
-                    msg.type = 4;
-                    msg.imageDesc = item.content;
-                    msg.content = "[虚拟图片]";
-                } else {
-                    msg.type = 0;
-                }
-                
-                long rowId = db.messageDao().insert(msg);
-                msg.id = (int) rowId;
-                
-        if (msg.type == 4) {
-            com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImagesForMessage(msg);
-        }
-        
-        // AI 回复也会增加未读消息数（如果当前Activity不在前台才增加，或者在Activity生命周期中处理，这里简单起见每次增加，由前台负责清零）
-        int currentActiveSessionId = SpUtils.getInt("CURRENT_CHAT_SESSION_ID", -1);
-        if (currentActiveSessionId != sessionId) {
-            db.chatSessionDao().incrementUnreadCount(sessionId, 1);
-        } else {
-            // 如果在前台，立刻清零以防万一
-            db.chatSessionDao().updateUnreadCount(sessionId, 0);
-        }
-        
-        // 模拟每条消息之间的间隔
-        try {
-            Thread.sleep(800);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-            
-            mainHandler.post(() -> {
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().setTitle(friendName != null ? friendName : "聊天");
-                }
-                btnSend.setEnabled(true);
-                checkAndGenerateSummaryMemory();
-            });
-        });
-    }
-
     private void checkAndGenerateSummaryMemory() {
         int summaryRounds = SpUtils.getInt("SETTING_SUMMARY_ROUNDS", 50);
         if (summaryRounds <= 0 || currentCharacter == null) return;
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            // Check state to avoid duplicate execution
             boolean isSummarizing = SpUtils.getBoolean("IS_SUMMARIZING_" + currentCharacter.id, false);
             if (isSummarizing) return;
 
-            // 获取这个角色的未总结消息数量，简化起见，直接查询所有消息数 / summaryRounds 是否满足，并记录上次总结时间
             long lastSummaryTime = SpUtils.getLong("LAST_SUMMARY_TIME_" + currentCharacter.id, 0);
-            
-            // 查询上次总结之后的对话条数
             int newMessagesCount = db.messageDao().getMessagesCountSinceSync(sessionId, lastSummaryTime);
-            
+
             if (newMessagesCount >= summaryRounds * 2) {
                 SpUtils.putBoolean("IS_SUMMARIZING_" + currentCharacter.id, true);
-                // 触发总结
                 String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
                 String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
                 String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
@@ -1393,33 +982,35 @@ public class ChatActivity extends AppCompatActivity {
 
                 List<Message> history = db.messageDao().getRecentMessagesBySessionIdSync(sessionId, summaryRounds * 2);
                 java.util.Collections.reverse(history);
-                
+
                 StringBuilder dialogue = new StringBuilder();
                 for (Message msg : history) {
                     dialogue.append(msg.isFromUser ? "用户: " : "角色: ").append(msg.content).append("\n");
                 }
 
                 String myName = currentMyPersona != null ? currentMyPersona.name : "用户";
-                String prompt = "请根据以下对话，以第三人称视角客观地总结一段发生的事情或重要信息的“普通记忆”。\n" +
-                                "【重要要求】：必须使用双方的真实姓名（\"" + currentCharacter.name + "\" 和 \"" + myName + "\"）来进行描述，绝对不要笼统地用“他们”、“他”或“她”代指。（200字以内，直接输出总结内容，不要任何废话）：\n\n" + dialogue.toString();
+                String prompt = "请根据以下对话，以第三人称视角客观地总结一段发生的事情或重要信息的\"普通记忆\"。\n" +
+                        "【重要要求】：必须使用双方的真实姓名（\"" + currentCharacter.name + "\" 和 \"" + myName + "\"）来进行描述，绝对不要笼统地用\"他们\"、\"他\"或\"她\"代指。（200字以内，直接输出总结内容，不要任何废话）：\n\n" + dialogue.toString();
 
                 OpenAiRequest request = new OpenAiRequest();
                 request.model = model;
                 request.messages = new java.util.ArrayList<>();
                 request.messages.add(new OpenAiRequest.Message("user", prompt));
-                
+
                 try {
                     retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
-                    if (response.isSuccessful() && response.body() != null && response.body().choices != null && !response.body().choices.isEmpty() && response.body().choices.get(0) != null && response.body().choices.get(0).message != null && response.body().choices.get(0).message.content != null) {
+                    if (response.isSuccessful() && response.body() != null && response.body().choices != null
+                            && !response.body().choices.isEmpty()
+                            && response.body().choices.get(0) != null
+                            && response.body().choices.get(0).message != null
+                            && response.body().choices.get(0).message.content != null) {
                         String summary = response.body().choices.get(0).message.content.trim();
-                        
                         com.yoyo.jingxi.data.entity.Memory memory = new com.yoyo.jingxi.data.entity.Memory();
                         memory.characterId = currentCharacter.id;
-                        memory.type = 0; // 0 为普通记忆
+                        memory.type = 0;
                         memory.content = summary;
                         memory.timestamp = System.currentTimeMillis();
                         db.memoryDao().insert(memory);
-
                         SpUtils.putLong("LAST_SUMMARY_TIME_" + currentCharacter.id, System.currentTimeMillis());
                     }
                 } catch (Exception e) {
@@ -1431,23 +1022,12 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
-    private void showError(String msg) {
-        mainHandler.post(() -> {
-            if (getSupportActionBar() != null) {
-                getSupportActionBar().setTitle(friendName != null ? friendName : "聊天");
-            }
-            Toast.makeText(ChatActivity.this, msg, Toast.LENGTH_SHORT).show();
-            btnSend.setEnabled(true);
-        });
-    }
-
     private void handleRegenerate() {
         layoutFunctionPanel.setVisibility(View.GONE);
         Executors.newSingleThreadExecutor().execute(() -> {
             List<Message> history = db.messageDao().getRecentMessagesBySessionIdSync(sessionId, 50);
-            
+
             int countToDelete = 0;
-            // 找到最后一次 AI 连续发送的所有回复
             for (Message msg : history) {
                 if (!msg.isFromUser) {
                     countToDelete++;
@@ -1457,13 +1037,11 @@ public class ChatActivity extends AppCompatActivity {
             }
 
             if (countToDelete > 0) {
-                // 取出需要删除的消息
                 for (int i = 0; i < countToDelete; i++) {
                     db.messageDao().delete(history.get(i));
                 }
             }
 
-            // 重新请求 AI
             mainHandler.post(this::requestAiReply);
         });
     }
@@ -1490,13 +1068,9 @@ public class ChatActivity extends AppCompatActivity {
                     Toast.makeText(this, "转发功能开发中", Toast.LENGTH_SHORT).show();
                     break;
                 case 3:
-                    // 删除
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        db.messageDao().delete(msg);
-                    });
+                    Executors.newSingleThreadExecutor().execute(() -> db.messageDao().delete(msg));
                     break;
                 case 4:
-                    // 撤回
                     Executors.newSingleThreadExecutor().execute(() -> {
                         msg.type = 99;
                         msg.content = "你撤回了一条消息";
@@ -1504,11 +1078,9 @@ public class ChatActivity extends AppCompatActivity {
                     });
                     break;
                 case 5:
-                    // 引用
                     quoteMessage(msg);
                     break;
                 case 6:
-                    // 编辑
                     showEditMessageDialog(msg);
                     break;
             }
@@ -1537,8 +1109,6 @@ public class ChatActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private Message pendingQuoteMsg;
-
     private void quoteMessage(Message msg) {
         pendingQuoteMsg = msg;
         String sender = msg.isFromUser ? "我" : (friendName != null ? friendName : "对方");
@@ -1554,84 +1124,37 @@ public class ChatActivity extends AppCompatActivity {
         etInput.setHint("输入消息...");
     }
 
-    private void handleInlineMomentCommand(OpenAIManager.ReplyItem item) {
-        if (item.content == null) return;
-        int lastBraceStart = item.content.lastIndexOf("{");
-        int lastBraceEnd = item.content.lastIndexOf("}");
+    private void requestAiReply() {
+        if (currentCharacter == null) {
+            Toast.makeText(this, "正在加载角色信息，请稍后再试", Toast.LENGTH_SHORT).show();
+            return;
+        }
         
-        if (lastBraceStart >= 0 && lastBraceEnd > lastBraceStart) {
-            String maybeJson = item.content.substring(lastBraceStart, lastBraceEnd + 1);
-            if (maybeJson.contains("\"command\"")) {
-                handleMomentCommand(maybeJson);
-                // 移除命令，不在聊天界面显示
-                item.content = item.content.substring(0, lastBraceStart).trim() + item.content.substring(lastBraceEnd + 1).trim();
-            }
+        String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
+        if (TextUtils.isEmpty(apiKey)) {
+            Toast.makeText(this, "请先在桌面的设置应用中配置 OpenAI API KEY", Toast.LENGTH_LONG).show();
+            return;
         }
-    }
 
-    private void handleMomentCommand(String jsonStr) {
-        try {
-            org.json.JSONObject cmd = new org.json.JSONObject(jsonStr);
-            String command = cmd.optString("command", "");
-            
-            if ("post_moment".equals(command)) {
-                String content = cmd.optString("content", "");
-                if (!content.isEmpty() && currentCharacter != null) {
-                    com.yoyo.jingxi.data.entity.Moment moment = new com.yoyo.jingxi.data.entity.Moment();
-                    moment.publisherType = 1;
-                    moment.publisherId = String.valueOf(currentCharacter.id);
-                    moment.publisherName = currentCharacter.name;
-                    moment.publisherAvatar = currentCharacter.avatarPath;
-                    moment.content = content;
-                    moment.timestamp = System.currentTimeMillis();
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        long id = db.momentDao().insert(moment);
-                        moment.id = (int)id;
-                        com.yoyo.jingxi.utils.MomentSimulator.simulateInteraction(this, moment);
-                    });
-                }
-            } else if ("like_moment".equals(command)) {
-                int momentId = cmd.optInt("moment_id", -1);
-                if (momentId != -1 && currentCharacter != null) {
-                    com.yoyo.jingxi.data.entity.MomentLike like = new com.yoyo.jingxi.data.entity.MomentLike();
-                    like.momentId = momentId;
-                    like.likerType = 1;
-                    like.likerId = String.valueOf(currentCharacter.id);
-                    like.likerName = currentCharacter.name;
-                    like.timestamp = System.currentTimeMillis();
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        // 检查是否已经点过赞
-                        com.yoyo.jingxi.data.entity.MomentLike existingLike = db.momentLikeDao().getLikeByLiker(momentId, String.valueOf(currentCharacter.id));
-                        if (existingLike == null) {
-                            db.momentLikeDao().insert(like);
-                            // 触发列表刷新
-                            com.yoyo.jingxi.data.entity.Moment m = db.momentDao().getMomentById(momentId);
-                            if (m != null) db.momentDao().update(m);
-                        }
-                    });
-                }
-            } else if ("comment_moment".equals(command)) {
-                int momentId = cmd.optInt("moment_id", -1);
-                String content = cmd.optString("content", "");
-                if (momentId != -1 && !content.isEmpty() && currentCharacter != null) {
-                    com.yoyo.jingxi.data.entity.MomentComment comment = new com.yoyo.jingxi.data.entity.MomentComment();
-                    comment.momentId = momentId;
-                    comment.authorType = 1;
-                    comment.authorId = String.valueOf(currentCharacter.id);
-                    comment.authorName = currentCharacter.name;
-                    comment.content = content;
-                    comment.replyToType = -1;
-                    comment.timestamp = System.currentTimeMillis();
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        db.momentCommentDao().insert(comment);
-                        // 触发列表刷新
-                        com.yoyo.jingxi.data.entity.Moment m = db.momentDao().getMomentById(momentId);
-                        if (m != null) db.momentDao().update(m);
-                    });
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("对方正在输入中...");
         }
+        
+        Intent serviceIntent = new Intent(this, com.yoyo.jingxi.service.AiReplyService.class);
+        serviceIntent.setAction(com.yoyo.jingxi.service.AiReplyService.ACTION_START_REPLY);
+        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_SESSION_ID, sessionId);
+        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_CHARACTER_ID, currentCharacter.id);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            try {
+                startForegroundService(serviceIntent);
+            } catch (Exception e) {
+                android.util.Log.e("ChatActivity", "Failed to start foreground service", e);
+                startService(serviceIntent);
+            }
+        } else {
+            startService(serviceIntent);
+        }
+        // 发出请求后禁用发送按钮
+        btnSend.setEnabled(false);
     }
 }

@@ -45,6 +45,13 @@ public class DesktopActivity extends AppCompatActivity {
     private String cityName = "未知";
     private String weatherDesc = "多云";
     private String temperature = "26°C";
+    private double currentLat = 39.9042; // Default Beijing
+    private double currentLon = 116.4074;
+    private String currentAdcode = "110000"; // Default Beijing adcode
+
+    private long lastWeatherRefreshTime = 0;
+    private static final long WEATHER_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+    private static final long WEATHER_SMART_REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
     private final Runnable timeUpdater = new Runnable() {
         @Override
@@ -177,6 +184,11 @@ public class DesktopActivity extends AppCompatActivity {
 
         handler.post(timeUpdater);
         
+        long now = System.currentTimeMillis();
+        if (now - lastWeatherRefreshTime > WEATHER_SMART_REFRESH_INTERVAL) {
+            checkLocationPermissionAndRefreshWeather();
+        }
+        
         // 加载背景
         String bgPath = ThemeManager.getBgImagePath(this);
         if (bgPath != null && !bgPath.isEmpty()) {
@@ -247,6 +259,9 @@ public class DesktopActivity extends AppCompatActivity {
             intent.putExtra("cityName", cityName);
             intent.putExtra("weatherDesc", weatherDesc);
             intent.putExtra("temperature", temperature);
+            intent.putExtra("lat", currentLat);
+            intent.putExtra("lon", currentLon);
+            intent.putExtra("adcode", currentAdcode);
             startActivity(intent);
         });
 
@@ -440,13 +455,69 @@ public class DesktopActivity extends AppCompatActivity {
         }
     }
 
+    private void updateCityName(double lat, double lon) {
+        new Thread(() -> {
+            Geocoder geocoder = new Geocoder(DesktopActivity.this, Locale.getDefault());
+            try {
+                List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    Address address = addresses.get(0);
+                    String tempCity = address.getLocality();
+                    if (tempCity == null) tempCity = address.getAdminArea();
+                    if (tempCity == null) tempCity = "未知";
+                    if (tempCity.endsWith("市")) tempCity = tempCity.substring(0, tempCity.length() - 1);
+                    
+                    final String finalCity = tempCity;
+                    runOnUiThread(() -> cityName = finalCity);
+                }
+            } catch (Exception e) {
+                // fallback
+            }
+        }).start();
+    }
+
     private void refreshWeather(double lat, double lon) {
-        String amapKey = com.yoyo.jingxi.utils.SpUtils.getString("AMAP_WEATHER_KEY", "");
-        if (android.text.TextUtils.isEmpty(amapKey)) {
-            fetchOpenMeteoWeather(lat, lon);
+        currentLat = lat;
+        currentLon = lon;
+        lastWeatherRefreshTime = System.currentTimeMillis();
+        
+        updateCityName(lat, lon);
+        
+        String qWeatherKey = com.yoyo.jingxi.utils.SpUtils.getString("QWEATHER_API_KEY", "");
+        if (!android.text.TextUtils.isEmpty(qWeatherKey)) {
+            fetchQWeatherNow(lat, lon, qWeatherKey);
         } else {
-            fetchAmapWeather(lat, lon, amapKey);
+            fetchOpenMeteoWeather(lat, lon);
         }
+    }
+
+    private void fetchQWeatherNow(double lat, double lon, String key) {
+        String customHost = com.yoyo.jingxi.utils.SpUtils.getString("QWEATHER_API_HOST", "").trim();
+        String qBaseUrl = customHost.isEmpty() ? "https://devapi.qweather.com/" : "https://" + customHost + "/";
+        retrofit2.Retrofit retrofit = new retrofit2.Retrofit.Builder()
+                .baseUrl(qBaseUrl)
+                .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+                .build();
+        com.yoyo.jingxi.network.QWeatherApi api = retrofit.create(com.yoyo.jingxi.network.QWeatherApi.class);
+        String location = String.format(java.util.Locale.US, "%.2f,%.2f", lon, lat);
+        api.getNow(location, key).enqueue(new retrofit2.Callback<com.yoyo.jingxi.network.QWeatherApi.QWeatherNowResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<com.yoyo.jingxi.network.QWeatherApi.QWeatherNowResponse> call,
+                                   retrofit2.Response<com.yoyo.jingxi.network.QWeatherApi.QWeatherNowResponse> response) {
+                if (response.isSuccessful() && response.body() != null && "200".equals(response.body().code)
+                        && response.body().now != null) {
+                    weatherDesc = response.body().now.text;
+                    temperature = response.body().now.temp + "°C";
+                    updateWeatherUI();
+                } else {
+                    fetchOpenMeteoWeather(lat, lon);
+                }
+            }
+            @Override
+            public void onFailure(retrofit2.Call<com.yoyo.jingxi.network.QWeatherApi.QWeatherNowResponse> call, Throwable t) {
+                fetchOpenMeteoWeather(lat, lon);
+            }
+        });
     }
     
     private void updateWeatherUI() {
@@ -463,20 +534,6 @@ public class DesktopActivity extends AppCompatActivity {
     }
 
     private void fetchOpenMeteoWeather(double lat, double lon) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(lat, lon, 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                cityName = address.getLocality();
-                if (cityName == null) cityName = address.getAdminArea();
-                if (cityName == null) cityName = "未知";
-                if (cityName.endsWith("市")) cityName = cityName.substring(0, cityName.length() - 1);
-            }
-        } catch (Exception e) {
-            // fallback
-        }
-
         retrofit2.Retrofit retrofit = new retrofit2.Retrofit.Builder()
                 .baseUrl("https://api.open-meteo.com/")
                 .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
@@ -506,46 +563,5 @@ public class DesktopActivity extends AppCompatActivity {
         if (code <= 79) return "雪";
         if (code <= 99) return "雷阵雨";
         return "未知";
-    }
-
-    private void fetchAmapWeather(double lat, double lon, String amapKey) {
-        retrofit2.Retrofit retrofit = new retrofit2.Retrofit.Builder()
-                .baseUrl("https://restapi.amap.com/")
-                .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
-                .build();
-        com.yoyo.jingxi.network.AmapWeatherApi api = retrofit.create(com.yoyo.jingxi.network.AmapWeatherApi.class);
-        
-        String location = lon + "," + lat;
-        api.getGeocode(location, amapKey).enqueue(new retrofit2.Callback<com.yoyo.jingxi.network.AmapWeatherApi.AmapGeocodeResponse>() {
-            @Override
-            public void onResponse(retrofit2.Call<com.yoyo.jingxi.network.AmapWeatherApi.AmapGeocodeResponse> call, retrofit2.Response<com.yoyo.jingxi.network.AmapWeatherApi.AmapGeocodeResponse> response) {
-                if (response.isSuccessful() && response.body() != null && "1".equals(response.body().status)) {
-                    if (response.body().regeocode != null && response.body().regeocode.addressComponent != null) {
-                        String adcode = response.body().regeocode.addressComponent.adcode;
-                        api.getWeather(adcode, amapKey, "base").enqueue(new retrofit2.Callback<com.yoyo.jingxi.network.AmapWeatherApi.AmapWeatherResponse>() {
-                            @Override
-                            public void onResponse(retrofit2.Call<com.yoyo.jingxi.network.AmapWeatherApi.AmapWeatherResponse> call, retrofit2.Response<com.yoyo.jingxi.network.AmapWeatherApi.AmapWeatherResponse> weatherResponse) {
-                                if (weatherResponse.isSuccessful() && weatherResponse.body() != null && "1".equals(weatherResponse.body().status)) {
-                                    if (weatherResponse.body().lives != null && !weatherResponse.body().lives.isEmpty()) {
-                                        com.yoyo.jingxi.network.AmapWeatherApi.AmapWeatherResponse.Lives live = weatherResponse.body().lives.get(0);
-                                        cityName = live.city;
-                                        if (cityName != null && cityName.endsWith("市")) {
-                                            cityName = cityName.substring(0, cityName.length() - 1);
-                                        }
-                                        weatherDesc = live.weather;
-                                        temperature = live.temperature + "°C";
-                                        updateWeatherUI();
-                                    }
-                                }
-                            }
-                            @Override
-                            public void onFailure(retrofit2.Call<com.yoyo.jingxi.network.AmapWeatherApi.AmapWeatherResponse> call, Throwable t) {}
-                        });
-                    }
-                }
-            }
-            @Override
-            public void onFailure(retrofit2.Call<com.yoyo.jingxi.network.AmapWeatherApi.AmapGeocodeResponse> call, Throwable t) {}
-        });
     }
 }

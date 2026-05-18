@@ -21,8 +21,7 @@ import java.util.concurrent.Executors;
 public class ChatSettingsActivity extends AppCompatActivity {
 
     private int sessionId;
-    private ListView lvChatWorldbooks;
-    private ListView lvEmojiGroups;
+    private android.widget.LinearLayout llChatWorldbooks;
     private android.widget.SeekBar sbMaxAiMessages;
     private android.widget.TextView tvMaxAiMessages;
     private com.google.android.material.switchmaterial.SwitchMaterial switchAutoMessage;
@@ -59,6 +58,7 @@ public class ChatSettingsActivity extends AppCompatActivity {
     }
     private List<WorldbookEntry> enabledEntries = new ArrayList<>();
     private List<String> allEmojiGroups = new ArrayList<>();
+    private List<String> selectedEmojiGroups = new ArrayList<>();
 
     private android.widget.ImageView ivChatBgPreview;
     private android.net.Uri currentBgUri;
@@ -78,8 +78,7 @@ public class ChatSettingsActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        lvChatWorldbooks = findViewById(R.id.lvChatWorldbooks);
-        lvEmojiGroups = findViewById(R.id.lvEmojiGroups);
+        llChatWorldbooks = findViewById(R.id.llChatWorldbooks);
         sbMaxAiMessages = findViewById(R.id.sbMaxAiMessages);
         tvMaxAiMessages = findViewById(R.id.tvMaxAiMessages);
         ivChatBgPreview = findViewById(R.id.ivChatBgPreview);
@@ -162,6 +161,10 @@ public class ChatSettingsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        findViewById(R.id.llClearMemory).setOnClickListener(v -> {
+            showEmojiGroupDialog();
+        });
+
         loadWorldbooks();
         loadEmojiGroups();
     }
@@ -227,21 +230,43 @@ public class ChatSettingsActivity extends AppCompatActivity {
             boolean shouldSelectAllDefault = selectedList.contains("全部表情") || selectedGroupsStr.isEmpty();
 
             runOnUiThread(() -> {
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_multiple_choice, allEmojiGroups);
-                if (lvEmojiGroups != null) {
-                    lvEmojiGroups.setAdapter(adapter);
-                    for (int i = 0; i < allEmojiGroups.size(); i++) {
-                        String group = allEmojiGroups.get(i);
-                        if (shouldSelectAllDefault || selectedList.contains(group)) {
-                            lvEmojiGroups.setItemChecked(i, true);
-                        } else {
-                            lvEmojiGroups.setItemChecked(i, false);
-                        }
+                selectedEmojiGroups.clear();
+                for (int i = 0; i < allEmojiGroups.size(); i++) {
+                    String group = allEmojiGroups.get(i);
+                    if (shouldSelectAllDefault || selectedList.contains(group)) {
+                        selectedEmojiGroups.add(group);
                     }
                 }
-                
             });
         });
+    }
+
+    private void showEmojiGroupDialog() {
+        if (allEmojiGroups == null || allEmojiGroups.isEmpty()) {
+            android.widget.Toast.makeText(this, "暂无表情包分组", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] items = allEmojiGroups.toArray(new String[0]);
+        boolean[] checkedItems = new boolean[items.length];
+        for (int i = 0; i < items.length; i++) {
+            checkedItems[i] = selectedEmojiGroups.contains(items[i]);
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("表情包管理")
+                .setMultiChoiceItems(items, checkedItems, (dialog, which, isChecked) -> {
+                    String group = items[which];
+                    if (isChecked) {
+                        if (!selectedEmojiGroups.contains(group)) {
+                            selectedEmojiGroups.add(group);
+                        }
+                    } else {
+                        selectedEmojiGroups.remove(group);
+                    }
+                })
+                .setPositiveButton("确定", null)
+                .show();
     }
 
     private void loadWorldbooks() {
@@ -251,23 +276,27 @@ public class ChatSettingsActivity extends AppCompatActivity {
             String unselectedStr = SpUtils.getString("CHAT_WORLDBOOK_UNSELECTED_" + sessionId, "");
             List<String> unselectedList = Arrays.asList(unselectedStr.split(","));
 
-            List<String> titles = new ArrayList<>();
-            for (WorldbookEntry entry : enabledEntries) {
-                String typeStr = entry.type == 0 ? "[前]" : (entry.type == 1 ? "[中]" : "[后]");
-                titles.add(typeStr + " " + (entry.title != null && !entry.title.isEmpty() ? entry.title : "未命名"));
-            }
-
             runOnUiThread(() -> {
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_multiple_choice, titles);
-                lvChatWorldbooks.setAdapter(adapter);
-
+                llChatWorldbooks.removeAllViews();
+                
+                int padding = (int) (12 * getResources().getDisplayMetrics().density);
                 for (int i = 0; i < enabledEntries.size(); i++) {
                     WorldbookEntry entry = enabledEntries.get(i);
+                    String typeStr = entry.type == 0 ? "[前]" : (entry.type == 1 ? "[中]" : "[后]");
+                    String title = typeStr + " " + (entry.title != null && !entry.title.isEmpty() ? entry.title : "未命名");
+                    
+                    android.widget.CheckBox checkBox = new android.widget.CheckBox(this);
+                    checkBox.setText(title);
+                    checkBox.setTextSize(16);
+                    checkBox.setPadding(padding, padding, padding, padding);
+                    
                     if (!unselectedList.contains(String.valueOf(entry.id))) {
-                        lvChatWorldbooks.setItemChecked(i, true);
+                        checkBox.setChecked(true);
                     } else {
-                        lvChatWorldbooks.setItemChecked(i, false);
+                        checkBox.setChecked(false);
                     }
+                    
+                    llChatWorldbooks.addView(checkBox);
                 }
             });
         });
@@ -279,11 +308,13 @@ public class ChatSettingsActivity extends AppCompatActivity {
         
         // Save Worldbook selections
         if (!enabledEntries.isEmpty()) {
-            SparseBooleanArray checked = lvChatWorldbooks.getCheckedItemPositions();
             List<String> unselectedIds = new ArrayList<>();
             for (int i = 0; i < enabledEntries.size(); i++) {
-                if (checked == null || !checked.get(i)) {
-                    unselectedIds.add(String.valueOf(enabledEntries.get(i).id));
+                android.view.View view = llChatWorldbooks.getChildAt(i);
+                if (view instanceof android.widget.CheckBox) {
+                    if (!((android.widget.CheckBox) view).isChecked()) {
+                        unselectedIds.add(String.valueOf(enabledEntries.get(i).id));
+                    }
                 }
             }
             String unselectedStr = android.text.TextUtils.join(",", unselectedIds);
@@ -291,17 +322,8 @@ public class ChatSettingsActivity extends AppCompatActivity {
         }
 
         // Save Emoji Group selections
-        if (lvEmojiGroups != null && allEmojiGroups != null && !allEmojiGroups.isEmpty()) {
-            SparseBooleanArray checkedEmojis = lvEmojiGroups.getCheckedItemPositions();
-            List<String> selectedGroups = new ArrayList<>();
-            for (int i = 0; i < allEmojiGroups.size(); i++) {
-                if (checkedEmojis != null && checkedEmojis.get(i)) {
-                    selectedGroups.add(allEmojiGroups.get(i));
-                }
-            }
-            String selectedStr = android.text.TextUtils.join(",", selectedGroups);
-            SpUtils.putString("CHAT_EMOJI_GROUP_" + sessionId, selectedStr);
-        }
+        String selectedStr = android.text.TextUtils.join(",", selectedEmojiGroups);
+        SpUtils.putString("CHAT_EMOJI_GROUP_" + sessionId, selectedStr);
         
         // Save Auto Message Config
         if (switchAutoMessage != null) {

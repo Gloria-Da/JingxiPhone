@@ -252,7 +252,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="高德天气配置"
+                android:text="和风天气配置 (QWeather)"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="?attr/colorTextPrimary"
@@ -261,20 +261,42 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etAmapWeatherKey"
+                    android:id="@+id/etQWeatherHost"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_edit_text_rounded"
-                    android:hint="高德天气 Web服务 API Key (可选)" />
+                    android:hint="API Host (如 abc123.def.qweatherapi.com)"
+                    android:inputType="textUri" />
             </com.google.android.material.textfield.TextInputLayout>
-            
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="如果不填，将默认使用 OpenMeteo 免费服务获取天气。如填写高德 Web 服务 Key，则国内定位与天气更加精准。"
+                android:text="在控制台→设置中查看你的专属 API Host，每个账号唯一。"
+                android:textSize="12sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etQWeatherKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_edit_text_rounded"
+                    android:hint="和风天气 API Key (可选)" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="如果不填，将默认使用 OpenMeteo 免费服务获取天气。填写和风天气 Key (可去 qweather.com 免费申请) 可获得更精准的国内天气及逐小时预报。"
                 android:textSize="12sp"
                 android:textColor="?attr/colorTextSecondary"
                 android:layout_marginBottom="16dp" />

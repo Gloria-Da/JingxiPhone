@@ -138,6 +138,9 @@ public class AddFriendActivity extends AppCompatActivity {
         etAutoMomentInterval = findViewById(R.id.etAutoMomentInterval);
         etAutoMomentStartTime = findViewById(R.id.etAutoMomentStartTime);
         etAutoMomentEndTime = findViewById(R.id.etAutoMomentEndTime);
+        
+        etAutoMomentStartTime.setOnClickListener(v -> showTimePickerDialog(etAutoMomentStartTime));
+        etAutoMomentEndTime.setOnClickListener(v -> showTimePickerDialog(etAutoMomentEndTime));
 
         // 设置 Slider 监听以更新 EditText
         sliderVoicePitch.addOnChangeListener((slider, value, fromUser) -> {
@@ -176,6 +179,28 @@ public class AddFriendActivity extends AppCompatActivity {
         }
 
         btnSave.setOnClickListener(v -> saveCharacter());
+    }
+
+    private void showTimePickerDialog(android.widget.EditText editText) {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        int hour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(java.util.Calendar.MINUTE);
+        
+        String currentTime = editText.getText().toString();
+        if (!currentTime.isEmpty() && currentTime.contains(":")) {
+            String[] parts = currentTime.split(":");
+            try {
+                hour = Integer.parseInt(parts[0]);
+                minute = Integer.parseInt(parts[1]);
+            } catch (NumberFormatException e) {
+                // Ignore and use current time
+            }
+        }
+
+        new android.app.TimePickerDialog(this, (view, hourOfDay, minuteOfHour) -> {
+            String time = String.format("%02d:%02d", hourOfDay, minuteOfHour);
+            editText.setText(time);
+        }, hour, minute, true).show();
     }
 
     private void setupEditTextToSliderLink(android.widget.EditText editText, com.google.android.material.slider.Slider slider, boolean isInteger) {

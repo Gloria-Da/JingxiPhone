@@ -24,7 +24,9 @@ import com.yoyo.jingxi.utils.ThemeManager;
 public class ThemeSettingsActivity extends AppCompatActivity {
 
     private ImageView ivBgPreview;
+    private ImageView ivGlobalBgPreview;
     private String currentBgPath;
+    private String currentGlobalBgPath;
 
     private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -45,10 +47,43 @@ public class ThemeSettingsActivity extends AppCompatActivity {
                     if (resultUri != null) {
                         currentBgPath = resultUri.toString();
                         ThemeManager.setBgImagePath(this, currentBgPath);
-            if (!isFinishing() && !isDestroyed()) {
-                Glide.with(ThemeSettingsActivity.this.getApplicationContext()).load(currentBgPath).into(ivBgPreview);
-            }
+                        if (!isFinishing() && !isDestroyed()) {
+                            Glide.with(ThemeSettingsActivity.this.getApplicationContext()).load(currentBgPath).into(ivBgPreview);
+                        }
                         Toast.makeText(this, "背景图片已更新", Toast.LENGTH_SHORT).show();
+                        ThemeManager.applyGlobalBackground(this);
+                        loadCurrentGlobalBg();
+                    }
+                } else if (result.getResultCode() == com.yalantis.ucrop.UCrop.RESULT_ERROR) {
+                    Throwable cropError = com.yalantis.ucrop.UCrop.getError(result.getData());
+                    if (cropError != null) {
+                        Toast.makeText(this, "裁剪失败: " + cropError.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+
+    private final ActivityResultLauncher<Intent> pickGlobalImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri imageUri = result.getData().getData();
+                    if (imageUri != null) {
+                        startCropGlobal(imageUri);
+                    }
+                }
+            });
+
+    private final ActivityResultLauncher<Intent> cropGlobalImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri resultUri = com.yalantis.ucrop.UCrop.getOutput(result.getData());
+                    if (resultUri != null) {
+                        currentGlobalBgPath = resultUri.toString();
+                        ThemeManager.setGlobalBgImagePath(this, currentGlobalBgPath);
+                        loadCurrentGlobalBg();
+                        ThemeManager.applyGlobalBackground(this);
+                        Toast.makeText(this, "功能背景已更新", Toast.LENGTH_SHORT).show();
                     }
                 } else if (result.getResultCode() == com.yalantis.ucrop.UCrop.RESULT_ERROR) {
                     Throwable cropError = com.yalantis.ucrop.UCrop.getError(result.getData());
@@ -73,6 +108,19 @@ public class ThemeSettingsActivity extends AppCompatActivity {
         cropImageLauncher.launch(intent);
     }
 
+    private void startCropGlobal(Uri sourceUri) {
+        String destinationFileName = "cropped_global_bg_" + System.currentTimeMillis() + ".jpg";
+        Uri destinationUri = Uri.fromFile(new java.io.File(getCacheDir(), destinationFileName));
+
+        com.yalantis.ucrop.UCrop uCrop = com.yalantis.ucrop.UCrop.of(sourceUri, destinationUri);
+        
+        uCrop.withAspectRatio(9, 16);
+        uCrop.withMaxResultSize(1080, 1920);
+
+        Intent intent = uCrop.getIntent(this);
+        cropGlobalImageLauncher.launch(intent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ThemeManager.applyTheme(this);
@@ -84,8 +132,11 @@ public class ThemeSettingsActivity extends AppCompatActivity {
         RadioGroup rgThemes = findViewById(R.id.rgThemes);
         RadioGroup rgNightMode = findViewById(R.id.rgNightMode);
         ivBgPreview = findViewById(R.id.ivBgPreview);
+        ivGlobalBgPreview = findViewById(R.id.ivGlobalBgPreview);
         Button btnSelectBg = findViewById(R.id.btnSelectBg);
         Button btnClearBg = findViewById(R.id.btnClearBg);
+        Button btnSelectGlobalBg = findViewById(R.id.btnSelectGlobalBg);
+        Button btnClearGlobalBg = findViewById(R.id.btnClearGlobalBg);
 
         // 初始化深色模式单选组
         int nightMode = ThemeManager.getNightMode(this);
@@ -158,7 +209,46 @@ public class ThemeSettingsActivity extends AppCompatActivity {
             ThemeManager.setBgImagePath(this, null);
             currentBgPath = null;
             ivBgPreview.setImageDrawable(null);
+            ThemeManager.applyGlobalBackground(this);
+            loadCurrentGlobalBg();
             Toast.makeText(this, "背景已清除", Toast.LENGTH_SHORT).show();
         });
+
+        loadCurrentGlobalBg();
+
+        btnSelectGlobalBg.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            pickGlobalImageLauncher.launch(intent);
+        });
+
+        btnClearGlobalBg.setOnClickListener(v -> {
+            ThemeManager.setGlobalBgImagePath(this, null);
+            currentGlobalBgPath = null;
+            loadCurrentGlobalBg();
+            ThemeManager.applyGlobalBackground(this);
+            Toast.makeText(this, "功能背景已恢复跟随桌面", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void loadCurrentGlobalBg() {
+        currentGlobalBgPath = ThemeManager.getGlobalBgImagePath(this);
+        if (currentGlobalBgPath != null && !currentGlobalBgPath.isEmpty()) {
+            if (!isFinishing() && !isDestroyed()) {
+                Glide.with(ThemeSettingsActivity.this.getApplicationContext()).load(currentGlobalBgPath).into(ivGlobalBgPreview);
+                ivGlobalBgPreview.clearColorFilter();
+            }
+        } else {
+            ivGlobalBgPreview.setImageDrawable(null);
+            
+            String desktopBgPath = ThemeManager.getBgImagePath(this);
+            if (desktopBgPath != null && !desktopBgPath.isEmpty()) {
+                if (!isFinishing() && !isDestroyed()) {
+                    Glide.with(ThemeSettingsActivity.this.getApplicationContext()).load(desktopBgPath).into(ivGlobalBgPreview);
+                    ivGlobalBgPreview.setColorFilter(android.graphics.Color.parseColor("#40000000"), android.graphics.PorterDuff.Mode.SRC_ATOP);
+                }
+            } else {
+                ivGlobalBgPreview.setBackgroundColor(getResources().getColor(ThemeManager.isDarkMode(this) ? R.color.theme_dark_bg : R.color.colorBackground));
+            }
+        }
     }
 }

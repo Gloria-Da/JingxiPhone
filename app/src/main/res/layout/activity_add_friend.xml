@@ -307,6 +307,8 @@
                         android:id="@+id/etAutoMomentStartTime"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:cursorVisible="false"
                         android:text="08:00"
                         android:hint="开始时间 (HH:mm)" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -320,6 +322,8 @@
                         android:id="@+id/etAutoMomentEndTime"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:cursorVisible="false"
                         android:text="22:00"
                         android:hint="结束时间 (HH:mm)" />
                 </com.google.android.material.textfield.TextInputLayout>

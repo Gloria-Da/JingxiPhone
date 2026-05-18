@@ -43,6 +43,18 @@ public class ImageGenForegroundService extends Service {
             }
         }
 
+        if (intent != null && intent.hasExtra("message_id")) {
+            int messageId = intent.getIntExtra("message_id", -1);
+            if (messageId != -1) {
+                new Thread(() -> {
+                    com.yoyo.jingxi.data.entity.Message message = com.yoyo.jingxi.data.AppDatabase.getDatabase(this).messageDao().getMessageByIdSync(messageId);
+                    if (message != null) {
+                        com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImagesForMessage(message);
+                    }
+                }).start();
+            }
+        }
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("图片生成中")
                 .setContentText("正在后台为您生成动态图片...")
@@ -50,10 +62,14 @@ public class ImageGenForegroundService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .build();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(NOTIFICATION_ID, notification);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return START_NOT_STICKY;

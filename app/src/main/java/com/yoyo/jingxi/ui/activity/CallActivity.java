@@ -163,7 +163,12 @@ public class CallActivity extends AppCompatActivity {
                 serviceIntent.putExtra("title", currentCharacter != null ? currentCharacter.name : "正在通话中");
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent);
+                        try {
+                            startForegroundService(serviceIntent);
+                        } catch (Exception e) {
+                            android.util.Log.e("CallActivity", "Failed to start foreground service", e);
+                            startService(serviceIntent);
+                        }
                     } else {
                         startService(serviceIntent);
                     }
@@ -223,7 +228,12 @@ public class CallActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, CallForegroundService.class);
         serviceIntent.putExtra("title", currentCharacter != null ? currentCharacter.name : "正在通话中");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
+            try {
+                startForegroundService(serviceIntent);
+            } catch (Exception e) {
+                android.util.Log.e("CallActivity", "Failed to start foreground service", e);
+                startService(serviceIntent);
+            }
         } else {
             startService(serviceIntent);
         }

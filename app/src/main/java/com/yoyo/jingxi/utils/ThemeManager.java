@@ -10,6 +10,7 @@ public class ThemeManager {
     private static final String PREF_NAME = "theme_prefs";
     private static final String KEY_THEME = "current_theme";
     private static final String KEY_BG_IMAGE = "bg_image_path";
+    private static final String KEY_GLOBAL_BG_IMAGE = "global_bg_image_path";
     private static final String KEY_NIGHT_MODE = "night_mode";
 
     public static final int THEME_YELLOW = 0;
@@ -115,6 +116,98 @@ public class ThemeManager {
     public static String getBgImagePath(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         return prefs.getString(KEY_BG_IMAGE, null);
+    }
+
+    public static void setGlobalBgImagePath(Context context, String path) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putString(KEY_GLOBAL_BG_IMAGE, path).apply();
+    }
+
+    public static String getGlobalBgImagePath(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(KEY_GLOBAL_BG_IMAGE, null);
+    }
+
+    public static void applyGlobalBackground(android.app.Activity activity) {
+        String globalBgPath = getGlobalBgImagePath(activity);
+        if (globalBgPath == null || globalBgPath.isEmpty()) {
+            globalBgPath = getBgImagePath(activity); // 如果为空，使用桌面背景
+        }
+        
+        android.view.ViewGroup rootView = activity.findViewById(android.R.id.content);
+        if (rootView == null) return;
+        
+        android.view.View existingBgView = rootView.findViewById(R.id.global_bg_image_view);
+        
+        if (globalBgPath != null && !globalBgPath.isEmpty()) {
+            if (existingBgView == null) {
+                android.widget.ImageView bgImageView = new android.widget.ImageView(activity);
+                bgImageView.setId(R.id.global_bg_image_view);
+                bgImageView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                bgImageView.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+                rootView.addView(bgImageView, 0); // 添加到最底层
+                existingBgView = bgImageView;
+            }
+            
+            if (!activity.isFinishing() && !activity.isDestroyed()) {
+                com.bumptech.glide.Glide.with(activity.getApplicationContext())
+                        .load(globalBgPath)
+                        .into((android.widget.ImageView) existingBgView);
+            }
+            
+            int filterColor;
+            if (isDarkMode(activity)) {
+                filterColor = activity.getResources().getColor(R.color.theme_dark_bg);
+            } else {
+                int theme = getTheme(activity);
+                switch (theme) {
+                    case THEME_PINK:
+                        filterColor = activity.getResources().getColor(R.color.theme_pink_bg);
+                        break;
+                    case THEME_BLUE:
+                        filterColor = activity.getResources().getColor(R.color.theme_blue_bg);
+                        break;
+                    case THEME_WHITE:
+                        filterColor = activity.getResources().getColor(R.color.white_bg);
+                        break;
+                    case THEME_YELLOW:
+                    default:
+                        filterColor = activity.getResources().getColor(R.color.colorBackground);
+                        break;
+                }
+            }
+            
+            int alpha = (int) (255 * 0.5f);
+            int finalFilterColor = android.graphics.Color.argb(alpha, 
+                    android.graphics.Color.red(filterColor), 
+                    android.graphics.Color.green(filterColor), 
+                    android.graphics.Color.blue(filterColor));
+            
+            ((android.widget.ImageView) existingBgView).setColorFilter(finalFilterColor, android.graphics.PorterDuff.Mode.SRC_ATOP);
+            
+            if (rootView.getChildCount() > 1) {
+                android.view.View contentView = rootView.getChildAt(1);
+                if (contentView.getTag(R.id.tag_original_bg) == null) {
+                    contentView.setTag(R.id.tag_original_bg, contentView.getBackground());
+                }
+                contentView.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            }
+        } else {
+            if (existingBgView != null) {
+                rootView.removeView(existingBgView);
+            }
+            
+            if (rootView.getChildCount() > 0) {
+                android.view.View contentView = rootView.getChildAt(0);
+                Object originalBg = contentView.getTag(R.id.tag_original_bg);
+                if (originalBg instanceof android.graphics.drawable.Drawable) {
+                    contentView.setBackground((android.graphics.drawable.Drawable) originalBg);
+                }
+                contentView.setTag(R.id.tag_original_bg, null);
+            }
+        }
     }
 
     public static void setDesktopPhoto1Path(Context context, String path) {

@@ -101,12 +101,7 @@ public class ImageGenerationManager {
         // 如果没有虚拟图片了，且不是消息相关的生图，可以考虑停止服务
         if (!hasVirtualImages) {
             Intent serviceIntent = new Intent(context, com.yoyo.jingxi.service.ImageGenForegroundService.class);
-            serviceIntent.setAction("ACTION_STOP");
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent);
-            } else {
-                context.startService(serviceIntent);
-            }
+            context.stopService(serviceIntent);
         }
     }
 
@@ -161,12 +156,7 @@ public class ImageGenerationManager {
         // 如果没有虚拟图片了，且不是动态相关的生图，可以考虑停止服务
         if (!hasVirtualImages) {
             Intent serviceIntent = new Intent(context, com.yoyo.jingxi.service.ImageGenForegroundService.class);
-            serviceIntent.setAction("ACTION_STOP");
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent);
-            } else {
-                context.startService(serviceIntent);
-            }
+            context.stopService(serviceIntent);
         }
     }
 
@@ -202,6 +192,12 @@ public class ImageGenerationManager {
     }
 
     private void doGenerateImageForMessage(com.yoyo.jingxi.data.entity.Message message, String prompt, String originalDesc) {
+        if (!SpUtils.getBoolean("ENABLE_IMAGE_GEN", false)) {
+            Log.d(TAG, "Image generation is disabled, skipping doGenerateImageForMessage");
+            markMessageImageGenerationError(message.id, originalDesc);
+            return;
+        }
+
         String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
         String key = SpUtils.getString("IMAGE_API_KEY", "");
         String model = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");
@@ -344,6 +340,12 @@ public class ImageGenerationManager {
     }
 
     private void doGenerateImage(Moment moment, int index, String prompt, String originalUrl) {
+        if (!SpUtils.getBoolean("ENABLE_IMAGE_GEN", false)) {
+            Log.d(TAG, "Image generation is disabled, skipping doGenerateImage");
+            markImageGenerationError(moment.id, index, originalUrl);
+            return;
+        }
+
         String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
         String key = SpUtils.getString("IMAGE_API_KEY", "");
         String model = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");

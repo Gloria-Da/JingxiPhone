@@ -9,9 +9,9 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
+        android:background="#A0FFFFFF"
         android:theme="@style/ThemeOverlay.AppCompat.Light"
-        app:titleTextColor="@android:color/white"
+        app:titleTextColor="?attr/colorTextPrimary"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         android:elevation="4dp">
 
@@ -72,7 +72,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="?attr/colorCardBackground"
+        android:background="#A0FFFFFF"
         app:menu="@menu/bottom_nav_menu"
         app:labelVisibilityMode="labeled" />
 

@@ -20,6 +20,7 @@ public class ImageDetailActivity extends AppCompatActivity {
 
     private String currentImageUrl;
     private int momentId = -1;
+    private int messageId = -1;
     private int imageIndex = -1;
     private PhotoView photoView;
     private android.widget.TextView tvDesc;
@@ -27,111 +28,143 @@ public class ImageDetailActivity extends AppCompatActivity {
     private BroadcastReceiver momentUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if ("com.yoyo.jingxi.ACTION_MOMENT_UPDATED".equals(intent.getAction())) {
+            if ("com.yoyo.jingxi.ACTION_MOMENT_UPDATED".equals(intent.getAction()) ||
+                "com.yoyo.jingxi.ACTION_MESSAGE_UPDATED".equals(intent.getAction())) {
                 checkAndUpdateImage();
             }
         }
     };
 
     private void checkAndUpdateImage() {
-        if (momentId == -1 || imageIndex == -1) return;
-        new Thread(() -> {
-            Moment moment = AppDatabase.getDatabase(ImageDetailActivity.this).momentDao().getMomentByIdSync(momentId);
-            if (moment != null && moment.imageUrl != null) {
-                String[] urls = moment.imageUrl.split(",");
-                if (imageIndex >= 0 && imageIndex < urls.length) {
-                    String newUrl = urls[imageIndex];
-                    if (!newUrl.equals(currentImageUrl)) {
-                        currentImageUrl = newUrl;
-                        runOnUiThread(() -> {
-                            if (isFinishing() || isDestroyed()) return;
-                            android.widget.Button btnRetry = findViewById(R.id.btn_retry_generate);
-                            btnRetry.setVisibility(android.view.View.GONE);
-                            
-                            if (currentImageUrl.startsWith("virtual://")) {
-                                if (tvDesc != null) {
-                                    tvDesc.setVisibility(android.view.View.VISIBLE);
-                                    String desc = android.net.Uri.decode(currentImageUrl.substring("virtual://".length()));
-                                    try {
-                                        org.json.JSONObject json = new org.json.JSONObject(desc);
-                                        if (json.has("desc")) {
-                                            tvDesc.setText("描述：" + json.getString("desc"));
-                                        } else {
-                                            tvDesc.setText("描述：" + desc);
-                                        }
-                                    } catch (Exception e) {
-                                        tvDesc.setText("描述：" + desc);
-                                    }
-                                }
-                                if (!isFinishing() && !isDestroyed()) {
-                                    Glide.with(ImageDetailActivity.this.getApplicationContext()).load(R.drawable.bg_virtual_image).into(photoView);
-                                }
-                            } else if (currentImageUrl.startsWith("error://")) {
-                                if (tvDesc != null) {
-                                    tvDesc.setVisibility(android.view.View.VISIBLE);
-                                    String desc = android.net.Uri.decode(currentImageUrl.substring("error://".length()));
-                                    try {
-                                        org.json.JSONObject json = new org.json.JSONObject(desc);
-                                        if (json.has("desc")) {
-                                            tvDesc.setText("图片生成失败！\n描述：" + json.getString("desc"));
-                                        } else {
-                                            tvDesc.setText("图片生成失败！\n描述：" + desc);
-                                        }
-                                    } catch (Exception e) {
-                                        tvDesc.setText("图片生成失败！\n描述：" + desc);
-                                    }
-                                }
-                                if (!isFinishing() && !isDestroyed()) {
-                                    Glide.with(ImageDetailActivity.this.getApplicationContext()).load(R.drawable.bg_virtual_image).into(photoView);
-                                }
-                                btnRetry.setVisibility(android.view.View.VISIBLE);
-                                btnRetry.setOnClickListener(v -> retryGenerateImage(currentImageUrl, android.net.Uri.decode(currentImageUrl.substring("error://".length()))));
-                            } else {
-                                if (tvDesc != null) tvDesc.setVisibility(android.view.View.GONE);
-                                if (!isFinishing() && !isDestroyed()) {
-                                    Glide.with(ImageDetailActivity.this.getApplicationContext())
-                                            .load(currentImageUrl)
-                                            .into(photoView);
-                                }
-                            }
-                        });
+        if (momentId != -1 && imageIndex != -1) {
+            new Thread(() -> {
+                Moment moment = AppDatabase.getDatabase(ImageDetailActivity.this).momentDao().getMomentByIdSync(momentId);
+                if (moment != null && moment.imageUrl != null) {
+                    String[] urls = moment.imageUrl.split(",");
+                    if (imageIndex >= 0 && imageIndex < urls.length) {
+                        String newUrl = urls[imageIndex];
+                        updateImageOnMainThread(newUrl);
                     }
                 }
-            }
-        }).start();
+            }).start();
+        } else if (messageId != -1) {
+            new Thread(() -> {
+                Message message = AppDatabase.getDatabase(ImageDetailActivity.this).messageDao().getMessageByIdSync(messageId);
+                if (message != null) {
+                    String newUrl = message.imageUrl;
+                    if (newUrl == null || newUrl.isEmpty()) {
+                        newUrl = message.imageDesc;
+                    }
+                    if (newUrl != null && !newUrl.isEmpty()) {
+                        updateImageOnMainThread(newUrl);
+                    }
+                }
+            }).start();
+        }
+    }
+
+    private void updateImageOnMainThread(String newUrl) {
+        if (!newUrl.equals(currentImageUrl)) {
+            currentImageUrl = newUrl;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                android.widget.Button btnRetry = findViewById(R.id.btn_retry_generate);
+                btnRetry.setVisibility(android.view.View.GONE);
+                
+                if (currentImageUrl.startsWith("virtual://")) {
+                    if (tvDesc != null) {
+                        tvDesc.setVisibility(android.view.View.VISIBLE);
+                        String desc = android.net.Uri.decode(currentImageUrl.substring("virtual://".length()));
+                        try {
+                            org.json.JSONObject json = new org.json.JSONObject(desc);
+                            if (json.has("desc")) {
+                                tvDesc.setText("描述：" + json.getString("desc"));
+                            } else {
+                                tvDesc.setText("描述：" + desc);
+                            }
+                        } catch (Exception e) {
+                            tvDesc.setText("描述：" + desc);
+                        }
+                    }
+                    if (!isFinishing() && !isDestroyed()) {
+                        Glide.with(ImageDetailActivity.this.getApplicationContext()).load(R.drawable.bg_virtual_image).into(photoView);
+                    }
+                } else if (currentImageUrl.startsWith("error://")) {
+                    if (tvDesc != null) {
+                        tvDesc.setVisibility(android.view.View.VISIBLE);
+                        String desc = android.net.Uri.decode(currentImageUrl.substring("error://".length()));
+                        try {
+                            org.json.JSONObject json = new org.json.JSONObject(desc);
+                            if (json.has("desc")) {
+                                tvDesc.setText("图片生成失败！\n描述：" + json.getString("desc"));
+                            } else {
+                                tvDesc.setText("图片生成失败！\n描述：" + desc);
+                            }
+                        } catch (Exception e) {
+                            tvDesc.setText("图片生成失败！\n描述：" + desc);
+                        }
+                    }
+                    if (!isFinishing() && !isDestroyed()) {
+                        Glide.with(ImageDetailActivity.this.getApplicationContext()).load(R.drawable.bg_virtual_image).into(photoView);
+                    }
+                    btnRetry.setVisibility(android.view.View.VISIBLE);
+                    btnRetry.setOnClickListener(v -> retryGenerateImage(currentImageUrl, android.net.Uri.decode(currentImageUrl.substring("error://".length()))));
+                } else {
+                    if (tvDesc != null) tvDesc.setVisibility(android.view.View.GONE);
+                    if (!isFinishing() && !isDestroyed()) {
+                        Glide.with(ImageDetailActivity.this.getApplicationContext())
+                                .load(currentImageUrl)
+                                .into(photoView);
+                    }
+                }
+            });
+        }
     }
 
     private void retryGenerateImage(String errorUrl, String prompt) {
-        if (momentId == -1) return;
+        if (momentId == -1 && messageId == -1) return;
         
         android.widget.Toast.makeText(ImageDetailActivity.this, "已加入后台重新生成队列", android.widget.Toast.LENGTH_SHORT).show();
         
         new Thread(() -> {
             AppDatabase db = AppDatabase.getDatabase(ImageDetailActivity.this);
-            Moment moment = db.momentDao().getMomentByIdSync(momentId);
-            if (moment != null && moment.imageUrl != null) {
-                String[] urls = moment.imageUrl.split(",");
-                if (imageIndex >= 0 && imageIndex < urls.length) {
-                    // 把 error:// 还原成 virtual://
-                    String virtualUrl = errorUrl.replace("error://", "virtual://");
-                    urls[imageIndex] = virtualUrl;
-                    
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < urls.length; i++) {
-                        sb.append(urls[i]);
-                        if (i < urls.length - 1) {
-                            sb.append(",");
+            if (momentId != -1) {
+                Moment moment = db.momentDao().getMomentByIdSync(momentId);
+                if (moment != null && moment.imageUrl != null) {
+                    String[] urls = moment.imageUrl.split(",");
+                    if (imageIndex >= 0 && imageIndex < urls.length) {
+                        // 把 error:// 还原成 virtual://
+                        String virtualUrl = errorUrl.replace("error://", "virtual://");
+                        urls[imageIndex] = virtualUrl;
+                        
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < urls.length; i++) {
+                            sb.append(urls[i]);
+                            if (i < urls.length - 1) {
+                                sb.append(",");
+                            }
                         }
+                        moment.imageUrl = sb.toString();
+                        db.momentDao().update(moment);
+                        
+                        // 通知更新
+                        Intent broadcastIntent = new Intent("com.yoyo.jingxi.ACTION_MOMENT_UPDATED");
+                        sendBroadcast(broadcastIntent);
+                        
+                        // 触发后台重新生成
+                        com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImages(moment);
                     }
-                    moment.imageUrl = sb.toString();
-                    db.momentDao().update(moment);
+                }
+            } else if (messageId != -1) {
+                Message message = db.messageDao().getMessageByIdSync(messageId);
+                if (message != null && message.imageDesc != null) {
+                    message.imageDesc = message.imageDesc.replace("error://", "virtual://");
+                    db.messageDao().update(message);
                     
-                    // 通知更新
-                    Intent broadcastIntent = new Intent("com.yoyo.jingxi.ACTION_MOMENT_UPDATED");
+                    Intent broadcastIntent = new Intent("com.yoyo.jingxi.ACTION_MESSAGE_UPDATED");
                     sendBroadcast(broadcastIntent);
                     
-                    // 触发后台重新生成
-                    com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImages(moment);
+                    com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImagesForMessage(message);
                 }
             }
         }).start();
@@ -153,7 +186,7 @@ public class ImageDetailActivity extends AppCompatActivity {
             if (mIdLong != -1L) momentId = (int) mIdLong;
         }
         imageIndex = getIntent().getIntExtra("image_index", -1);
-        int messageId = getIntent().getIntExtra("message_id", -1);
+        messageId = getIntent().getIntExtra("message_id", -1);
 
         String virtualDesc = getIntent().getStringExtra("virtual_desc");
 
@@ -188,6 +221,11 @@ public class ImageDetailActivity extends AppCompatActivity {
                             com.yoyo.jingxi.data.entity.Moment moment = db.momentDao().getMomentByIdSync(momentId);
                             if (moment != null) {
                                 com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImages(moment);
+                            }
+                        } else if (messageId != -1) {
+                            com.yoyo.jingxi.data.entity.Message message = db.messageDao().getMessageByIdSync(messageId);
+                            if (message != null) {
+                                com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImagesForMessage(message);
                             }
                         }
                     }).start();
@@ -246,6 +284,7 @@ public class ImageDetailActivity extends AppCompatActivity {
         });
 
         IntentFilter filter = new IntentFilter("com.yoyo.jingxi.ACTION_MOMENT_UPDATED");
+        filter.addAction("com.yoyo.jingxi.ACTION_MESSAGE_UPDATED");
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(momentUpdateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {

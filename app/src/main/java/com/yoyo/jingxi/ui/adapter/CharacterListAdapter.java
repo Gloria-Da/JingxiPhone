@@ -48,6 +48,14 @@ public class CharacterListAdapter extends RecyclerView.Adapter<CharacterListAdap
         holder.tvName.setText(character.name);
         holder.tvSummary.setText(character.persona); // Simple summary placeholder
         
+        // Hide unread count and delete button for standard lists (like in weather activity)
+        if (holder.tvUnreadCount != null) {
+            holder.tvUnreadCount.setVisibility(View.GONE);
+        }
+        if (holder.tvDelete != null) {
+            holder.tvDelete.setVisibility(View.GONE);
+        }
+        
         if (character.avatarPath != null && !character.avatarPath.isEmpty()) {
             android.content.Context context = holder.itemView.getContext();
             if (!(context instanceof android.app.Activity) || (!((android.app.Activity) context).isFinishing() && !((android.app.Activity) context).isDestroyed())) {
@@ -67,11 +75,13 @@ public class CharacterListAdapter extends RecyclerView.Adapter<CharacterListAdap
             }
         });
 
-        holder.tvDelete.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onDeleteClick(character);
-            }
-        });
+        if (holder.tvDelete != null) {
+            holder.tvDelete.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onDeleteClick(character);
+                }
+            });
+        }
     }
 
     @Override
@@ -92,6 +102,7 @@ public class CharacterListAdapter extends RecyclerView.Adapter<CharacterListAdap
         TextView tvSummary;
         View llRoot;
         TextView tvDelete;
+        TextView tvUnreadCount;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -100,6 +111,7 @@ public class CharacterListAdapter extends RecyclerView.Adapter<CharacterListAdap
             tvSummary = itemView.findViewById(R.id.tvSummary);
             llRoot = itemView.findViewById(R.id.llRoot);
             tvDelete = itemView.findViewById(R.id.tvDelete);
+            tvUnreadCount = itemView.findViewById(R.id.tvUnreadCount);
         }
     }
 }

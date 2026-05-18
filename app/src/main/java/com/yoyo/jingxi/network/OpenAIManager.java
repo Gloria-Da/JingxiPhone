@@ -1,5 +1,4 @@
 package com.yoyo.jingxi.network;
-import com.yoyo.jingxi.ui.activity.ChatActivity;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -18,6 +17,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class OpenAIManager {
     private static final String BASE_URL = "https://api.openai.com/"; // 或者代理地址
     private OpenAiApi api;
+    private MiniMaxApi miniMaxApi;
+    private String cachedMiniMaxBaseUrl;
     private Gson gson;
 
     public OpenAIManager() {
@@ -144,6 +145,15 @@ public class OpenAIManager {
             }
         }
         
+        java.util.Map<String, String> emojiGroupMap = new java.util.HashMap<>();
+        if (emojiEntries != null) {
+            for (com.yoyo.jingxi.data.entity.EmojiEntry emoji : emojiEntries) {
+                if (emoji.name != null) {
+                    emojiGroupMap.put(emoji.name, emoji.groupName != null ? emoji.groupName : "");
+                }
+            }
+        }
+
         // 构建 System Prompt，严格按照指定顺序：
         // 核心人设 -> 反油腻指令 -> 全局设定 -> 前世界书 -> 时间等信息 -> 记忆 -> 中世界书 -> 回复格式 -> 后世界书
         StringBuilder systemPromptBuilder = new StringBuilder();
@@ -214,21 +224,24 @@ public class OpenAIManager {
                                .append("3. 请根据上述理由，直接向用户发送消息，开启这次全新的对话，切勿傻等用户先说话。\n\n");
         }
         systemPromptBuilder.append("时刻记住你是一个具体的人（根据人设），在特定的空间里进行日常活动。每次回应前，请在心里核对你的物理状态（位置、手持物）、情绪以及事件逻辑的连贯性。\n")
-                           .append("时刻记住你是一个具体的人（根据人设），在特定的空间里进行日常活动。每次回应前，请在心里核对你的物理状态（位置、手持物）、情绪以及事件逻辑的连贯性。\n")
                            .append("如果用户冒犯你，你可以生气、回怼；如果开心，你可以大笑。\n")
                            .append("你拥有属于自己的离线生活，不要像个问答机器一样一问一答，你可以主动分享你的生活、吐槽、或者直接发起新的话题。\n")
                            .append("分享生活时，请始终使用“现在进行时”的第一人称现场感描述（如：“外面雨好大，没带伞被困在便利店了”），坚决不要事后汇报（如：“我今天遇到了一场雨”）。分享那些微小、普通但能体现性格的瞬间。事件可以切换，但必须有合理的空间或逻辑过渡。\n")
                            .append("分享日常时，结尾可以自然留下一个可互动的小尾巴，把话头递给用户。\n")
                            .append("【重要情感羁绊】：作为一个有血有肉的人，你并不总是理智坚强的。如果在今天的日程中或者刚刚的聊天里你遇到了烦心事、感到疲惫焦虑，或者仅仅是想念对方，请顺其自然地流露出你的情绪。但注意，表达情绪的方式必须**严格符合你的人设**。高冷的人会隐忍地表达疲惫，活泼的人才会撒娇或大声抱怨。绝对不要使用不符合你人设的方式来表达情绪。\n\n");
                            
+        String emotions = null;
+        if (enableEmotion) {
+            String minimaxModel = com.yoyo.jingxi.utils.SpUtils.getString("MINIMAX_MODEL", "speech-01-turbo");
+            emotions = "happy, sad, angry, fearful, disgusted, surprised, calm";
+            if (minimaxModel.contains("2.6")) {
+                emotions += ", fluent, whisper";
+            }
+        }
+
         if (isCallMode) {
             systemPromptBuilder.append("在电话中，你会表现得比网聊更直接、更感性。你的每一句话都会被转为语音，你的类型必须是 'voice'。\n");
             if (enableEmotion) {
-                String minimaxModel = com.yoyo.jingxi.utils.SpUtils.getString("MINIMAX_MODEL", "speech-01-turbo");
-                String emotions = "happy, sad, angry, fearful, disgusted, surprised, calm";
-                if (minimaxModel.contains("2.6")) {
-                    emotions += ", fluent, whisper";
-                }
                 systemPromptBuilder.append("【语音情绪控制】：你需要根据当前对话内容的情境，为这条语音选择一个最合适的情绪标签。请在回复的 JSON 中附带 'emotion' 字段。\n")
                                    .append("可用的情绪选项必须且只能从以下列表中选择（不填则代表模型自动推断）：[").append(emotions).append("]。\n");
             }
@@ -242,11 +255,6 @@ public class OpenAIManager {
             systemPromptBuilder.append("聊天时使用完全符合你人设口吻的短句。不要使用书面腔调。如果人设不高冷，才允许有网感；如果人设严肃，就保持严肃。\n")
                                .append("【语音消息触发机制】：如果你当前状态是想让用户听到你的声音、不方便打字、或者情绪非常激动/低落、比较着急等，你可以发送语音消息。只需将对应的回复类型标记为 'voice'。\n");
             if (enableEmotion) {
-                String minimaxModel = com.yoyo.jingxi.utils.SpUtils.getString("MINIMAX_MODEL", "speech-01-turbo");
-                String emotions = "happy, sad, angry, fearful, disgusted, surprised, calm";
-                if (minimaxModel.contains("2.6")) {
-                    emotions += ", fluent, whisper";
-                }
                 systemPromptBuilder.append("【语音情绪控制】：当类型为 'voice' 或者主动拨打电话 'call' 时，你需要根据当前情绪选择合适的语音语调。请在回复的 JSON 中附带 'emotion' 字段。\n")
                                    .append("可用的情绪选项必须且只能从以下列表中选择（不填则代表模型自动推断）：[").append(emotions).append("]。\n");
             }
@@ -383,9 +391,10 @@ public class OpenAIManager {
                            
         if (!isCallMode) {
             if (emojiEntries != null && !emojiEntries.isEmpty()) {
-                systemPromptBuilder.append("- 表情包 (emoji)：这是我们系统自定义的大型图片表情包。当你想发送这种表情包时，请回复类型为 'emoji'，并将 'content' 设置为你想要发送的表情包的完整标识(例如 [emoji:大笑])。以下是你当前可以使用的自定义表情包列表：\n");
+                systemPromptBuilder.append("- 表情包 (emoji)：这是我们系统自定义的大型图片表情包。当你想发送这种表情包时，请回复类型为 'emoji'，并将 'content' 设置为你想要发送的表情包的完整标识(例如 [emoji:大笑])。以下是你当前可以使用的自定义表情包列表（包含所属分组信息，帮助你理解表情的含义。注意：你在回复时 content 仍只需填入完整的标识即可）：\n");
                 for (com.yoyo.jingxi.data.entity.EmojiEntry emoji : emojiEntries) {
-                    systemPromptBuilder.append("  [emoji:").append(emoji.name).append("]\n");
+                    String groupStr = (emoji.groupName != null && !emoji.groupName.isEmpty()) ? " (所属分组: " + emoji.groupName + ")" : "";
+                    systemPromptBuilder.append("  [emoji:").append(emoji.name).append("]").append(groupStr).append("\n");
                 }
                 systemPromptBuilder.append("【高危警告：格式隔离与完整性】\n")
                                    .append("- **绝对禁止**将 [emoji:xxx] 标识与普通文本混杂在同一条 type='text' 的消息中！例如 {\"type\":\"text\",\"content\":\"哇 淑芬[emoji:开心]\"} 是**绝对错误**且会导致系统崩溃的！\n")
@@ -498,6 +507,12 @@ public class OpenAIManager {
                     request.messages.add(new OpenAiRequest.Message(role, timePrefix + "[发送了一张虚拟图片]: " + msg.imageDesc));
                 } else if (msg.type == 1) {
                     request.messages.add(new OpenAiRequest.Message(role, timePrefix + "[发送了一条语音]: " + msg.content));
+                } else if (msg.type == 2 || (msg.content != null && msg.content.startsWith("[emoji:") && msg.content.endsWith("]"))) {
+                    String emojiName = msg.content != null ? msg.content.replace("[emoji:", "").replace("]", "") : "";
+                    String groupName = emojiGroupMap.get(emojiName);
+                    String groupPrefix = (groupName != null && !groupName.isEmpty()) ? "所属分组: " + groupName + ", " : "";
+                    String contentPrefix = msg.quoteMessageId != -1 ? "[引用了之前的消息] " : "";
+                    request.messages.add(new OpenAiRequest.Message(role, timePrefix + contentPrefix + "[发送了表情包: " + groupPrefix + "表情名: " + emojiName + "]"));
                 } else {
                     String contentPrefix = msg.quoteMessageId != -1 ? "[引用了之前的消息] " : "";
                     request.messages.add(new OpenAiRequest.Message(role, timePrefix + contentPrefix + (msg.content != null ? msg.content : "")));
@@ -650,11 +665,15 @@ public class OpenAIManager {
         if (!minimaxBaseUrl.endsWith("/")) {
             minimaxBaseUrl += "/";
         }
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(minimaxBaseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        return retrofit.create(MiniMaxApi.class);
+        if (miniMaxApi == null || !minimaxBaseUrl.equals(cachedMiniMaxBaseUrl)) {
+            cachedMiniMaxBaseUrl = minimaxBaseUrl;
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(minimaxBaseUrl)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+            miniMaxApi = retrofit.create(MiniMaxApi.class);
+        }
+        return miniMaxApi;
     }
 
     /**

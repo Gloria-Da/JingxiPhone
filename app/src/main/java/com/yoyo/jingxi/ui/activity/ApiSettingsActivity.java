@@ -49,7 +49,8 @@ public class ApiSettingsActivity extends AppCompatActivity {
     private android.widget.EditText etPresetName;
     private Button btnSavePreset;
     private Spinner spinnerPreset;
-    private TextInputEditText etAmapWeatherKey;
+    private TextInputEditText etQWeatherKey;
+    private TextInputEditText etQWeatherHost;
 
     private ArrayAdapter<String> modelAdapter;
     private List<String> modelList = new ArrayList<>();
@@ -99,7 +100,8 @@ public class ApiSettingsActivity extends AppCompatActivity {
         btnFetchImageModels = findViewById(R.id.btnFetchImageModels);
         spinnerModel = findViewById(R.id.spinnerModel);
         btnFetchModels = findViewById(R.id.btnFetchModels);
-        etAmapWeatherKey = findViewById(R.id.etAmapWeatherKey);
+        etQWeatherKey = findViewById(R.id.etQWeatherKey);
+        etQWeatherHost = findViewById(R.id.etQWeatherHost);
         
         seekBarTemperature = findViewById(R.id.seekBarTemperature);
         etTemperatureValue = findViewById(R.id.etTemperatureValue);
@@ -133,14 +135,16 @@ public class ApiSettingsActivity extends AppCompatActivity {
         String imageEndpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
         String imageKey = SpUtils.getString("IMAGE_API_KEY", "");
         String imageModel = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");
-        String amapWeatherKey = SpUtils.getString("AMAP_WEATHER_KEY", "");
+        String qWeatherKey = SpUtils.getString("QWEATHER_API_KEY", "");
+        String qWeatherHost = SpUtils.getString("QWEATHER_API_HOST", "");
 
         switchEnableImageGen.setChecked(enableImageGen);
         etApiEndpoint.setText(endpoint);
         etApiKey.setText(key);
         etImageApiEndpoint.setText(imageEndpoint);
         etImageApiKey.setText(imageKey);
-        etAmapWeatherKey.setText(amapWeatherKey);
+        etQWeatherKey.setText(qWeatherKey);
+        etQWeatherHost.setText(qWeatherHost);
         
         if (!imageModelList.contains(imageModel)) {
             imageModelList.add(imageModel);
@@ -259,7 +263,8 @@ public class ApiSettingsActivity extends AppCompatActivity {
             String imageEndpoint = etImageApiEndpoint.getText() != null ? etImageApiEndpoint.getText().toString().trim() : "";
             String imageKey = etImageApiKey.getText() != null ? etImageApiKey.getText().toString().trim() : "";
             String imageModel = spinnerImageModel.getSelectedItem() != null ? spinnerImageModel.getSelectedItem().toString() : "dall-e-3";
-            String amapWeatherKey = etAmapWeatherKey.getText() != null ? etAmapWeatherKey.getText().toString().trim() : "";
+            String qWeatherKey = etQWeatherKey.getText() != null ? etQWeatherKey.getText().toString().trim() : "";
+            String qWeatherHost = etQWeatherHost.getText() != null ? etQWeatherHost.getText().toString().trim() : "";
 
             SpUtils.putString("API_ENDPOINT", endpoint);
             SpUtils.putString("OPENAI_API_KEY", key);
@@ -269,7 +274,8 @@ public class ApiSettingsActivity extends AppCompatActivity {
             SpUtils.putString("IMAGE_API_ENDPOINT", imageEndpoint);
             SpUtils.putString("IMAGE_API_KEY", imageKey);
             SpUtils.putString("IMAGE_API_MODEL", imageModel);
-            SpUtils.putString("AMAP_WEATHER_KEY", amapWeatherKey);
+            SpUtils.putString("QWEATHER_API_KEY", qWeatherKey);
+            SpUtils.putString("QWEATHER_API_HOST", qWeatherHost);
 
             Toast.makeText(this, "配置已保存", Toast.LENGTH_SHORT).show();
         });

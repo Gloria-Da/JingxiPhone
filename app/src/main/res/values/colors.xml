@@ -65,7 +65,7 @@
     <color name="dark_card_bg">#D9212121</color>
     
     <!-- 聊天气泡背景颜色 -->
-    <color name="bubble_right_yellow">#FFFDE7</color>
+    <color name="bubble_right_yellow">#FFF9C4</color>
     <color name="bubble_right_pink">#FCE4EC</color>
     <color name="bubble_right_blue">#E3F2FD</color>
     <color name="bubble_right_white">#E0E0E0</color>

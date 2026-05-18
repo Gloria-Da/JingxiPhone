@@ -5,7 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="?attr/colorBackground">
+    android:background="@android:color/transparent">
 
     <ImageView
         android:id="@+id/iv_avatar"

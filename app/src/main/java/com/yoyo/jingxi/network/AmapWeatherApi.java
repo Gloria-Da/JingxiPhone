@@ -19,6 +19,13 @@ public interface AmapWeatherApi {
             @Query("key") String key
     );
 
+    @GET("v3/weather/weatherInfo")
+    Call<AmapForecastResponse> getForecast(
+            @Query("city") String cityCode,
+            @Query("key") String key,
+            @Query("extensions") String extensions
+    );
+
     class AmapWeatherResponse {
         public String status;
         public String info;
@@ -28,6 +35,24 @@ public interface AmapWeatherApi {
             public String weather;
             public String temperature;
             public String city;
+        }
+    }
+
+    class AmapForecastResponse {
+        public String status;
+        public java.util.List<Forecasts> forecasts;
+        
+        public static class Forecasts {
+            public String city;
+            public java.util.List<Casts> casts;
+        }
+        
+        public static class Casts {
+            public String date;
+            public String dayweather;
+            public String nightweather;
+            public String daytemp;
+            public String nighttemp;
         }
     }
 

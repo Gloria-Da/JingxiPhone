@@ -13,6 +13,13 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.yoyo.jingxi.utils.ThemeManager;
 import com.yoyo.jingxi.worker.AutoMomentWorker;
+import com.yoyo.jingxi.worker.WeatherReminderWorker;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+import java.util.concurrent.TimeUnit;
 
 public class JingxiApplication extends Application {
     
@@ -41,11 +48,20 @@ public class JingxiApplication extends Application {
         
         // 启动后台定时任务
         setupAutoMessageWorker();
+        setupWeatherReminderWorker();
         
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
                 ThemeManager.applyTheme(activity);
+            }
+
+            @Override
+            public void onActivityPostCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+                if (!(activity instanceof com.yoyo.jingxi.ui.activity.DesktopActivity) &&
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity)) {
+                    ThemeManager.applyGlobalBackground(activity);
+                }
             }
 
             @Override
@@ -57,6 +73,11 @@ public class JingxiApplication extends Application {
 
             @Override
             public void onActivityResumed(@NonNull Activity activity) {
+                if (!(activity instanceof com.yoyo.jingxi.ui.activity.DesktopActivity) &&
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity)) {
+                    ThemeManager.applyGlobalBackground(activity);
+                }
+
                 if (activityReferences == 1 && !isActivityChangingConfigurations) {
                     android.app.NotificationManager notificationManager = (android.app.NotificationManager) getSystemService(android.content.Context.NOTIFICATION_SERVICE);
                     if (notificationManager != null) {
@@ -83,6 +104,7 @@ public class JingxiApplication extends Application {
 
             @Override
             public void onActivityStopped(@NonNull Activity activity) {
+                isActivityChangingConfigurations = activity.isChangingConfigurations();
                 if (--activityReferences == 0 && !isActivityChangingConfigurations) {
                     // App enters background
                 }
@@ -117,6 +139,23 @@ public class JingxiApplication extends Application {
                 "AutoMomentWork",
                 androidx.work.ExistingPeriodicWorkPolicy.KEEP,
                 autoMomentWorkRequest
+        );
+    }
+
+    private void setupWeatherReminderWorker() {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest weatherReminderRequest =
+                new PeriodicWorkRequest.Builder(WeatherReminderWorker.class, 12, TimeUnit.HOURS)
+                        .setConstraints(constraints)
+                        .build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "WeatherReminderWorker",
+                ExistingPeriodicWorkPolicy.KEEP,
+                weatherReminderRequest
         );
     }
 }
