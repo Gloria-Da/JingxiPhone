@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>镜隙 (Web版)</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFFCF5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/shapes/svg?seed=jingxi">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Dexie.js -->
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-100 overflow-hidden">
+
+    <!-- Mobile Device Frame -->
+    <div id="app-container" class="relative w-full h-full max-w-[430px] max-h-[932px] bg-black sm:rounded-[3rem] sm:border-[8px] sm:border-gray-800 shadow-2xl overflow-hidden flex flex-col mx-auto">
+
+        <!-- Status Bar -->
+        <div id="status-bar" class="h-10 w-full flex justify-between items-center px-6 text-white text-xs font-semibold z-[100] absolute top-0 left-0 pointer-events-none">
+            <span id="status-time">12:00</span>
+            <div class="flex gap-2 items-center">
+                <i class="fa-solid fa-signal text-[10px]"></i>
+                <i class="fa-solid fa-wifi text-[10px]"></i>
+                <i class="fa-solid fa-battery-full text-[10px]"></i>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             SCREEN CONTENT — 所有视图层叠在此
+             视觉层级: desktop(0) < wechat(1) < settings(2) < others(3-9)
+             ============================================================ -->
+        <div id="screen-content" class="flex-1 w-full h-full relative bg-cover bg-center theme-bg"
+             style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');">
+
+            <!-- ===============================================
+                 VIEW 0: DESKTOP — 主屏幕
+                 =============================================== -->
+            <div id="view-desktop" class="view-container view-visible theme-bg" style="z-index: 0;">
+                <div class="w-full h-full flex flex-col pt-14 pb-4 px-3 relative">
+
+                    <!-- 顶部信息卡片 -->
+                    <div class="flex justify-between items-start mb-3 px-1">
+                        <div class="flex-1">
+                            <div id="desktop-clock" class="text-white text-5xl font-light tracking-tight drop-shadow-lg">12:00</div>
+                            <div id="desktop-date" class="text-white text-sm mt-1 opacity-90 drop-shadow-md ml-1">5月30日 周五</div>
+                            <div id="desktop-signature" class="text-white/80 text-xs mt-1 ml-1 cursor-pointer drop-shadow"
+                                 onclick="Desktop.editSignature()" title="点击编辑签名">点击设置签名...</div>
+                        </div>
+                        <!-- 右上方照片卡 -->
+                        <div class="w-20 h-20 rounded-2xl overflow-hidden shadow-lg border-2 border-white/30 cursor-pointer active:scale-95 transition-transform"
+                             onclick="Desktop.changePhoto('right-top')">
+                            <img id="desktop-photo-right" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=400&auto=format&fit=crop"
+                                 class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                    <!-- 中部：左栏 + 右栏 -->
+                    <div class="flex-1 flex gap-3 mt-1 overflow-hidden">
+                        <!-- 左栏 -->
+                        <div class="w-[48%] flex flex-col gap-3">
+                            <!-- 照片卡 -->
+                            <div class="flex-1 rounded-2xl overflow-hidden shadow-lg border-2 border-white/30 cursor-pointer active:scale-[0.98] transition-transform"
+                                 onclick="Desktop.changePhoto('left')">
+                                <img id="desktop-photo-left" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=400&auto=format&fit=crop"
+                                     class="w-full h-full object-cover">
+                            </div>
+                            <!-- 应用图标行 -->
+                            <div class="flex gap-3 justify-center">
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('worldbook-list')">
+                                    <div class="w-12 h-12 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow">
+                                        <i class="fa-solid fa-book text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">世界书</span>
+                                </div>
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('schedule')">
+                                    <div class="w-12 h-12 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow">
+                                        <i class="fa-regular fa-calendar text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">日程</span>
+                                </div>
+                            </div>
+                            <!-- 天气卡片 (小) -->
+                            <div class="glass-card p-3 cursor-pointer active:scale-[0.98] transition-transform" onclick="openView('weather')">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs text-white/70">北京</div>
+                                        <div class="text-2xl font-light text-white" id="desktop-weather-temp">24°</div>
+                                        <div class="text-xs text-white/70" id="desktop-weather-desc">晴朗</div>
+                                    </div>
+                                    <i class="fa-solid fa-sun text-3xl text-white/80" id="desktop-weather-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右栏 -->
+                        <div class="w-[48%] flex flex-col gap-3">
+                            <!-- 应用网格 2x3 -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('wechat')">
+                                    <div class="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg">
+                                        <i class="fa-solid fa-comment text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">聊天</span>
+                                </div>
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('memory')">
+                                    <div class="w-12 h-12 bg-purple-500 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg">
+                                        <i class="fa-solid fa-brain text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">记忆</span>
+                                </div>
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('memo')">
+                                    <div class="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg">
+                                        <i class="fa-solid fa-note-sticky text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">备忘录</span>
+                                </div>
+                                <div class="app-icon-dock flex flex-col items-center gap-1 cursor-pointer" onclick="openView('weather')">
+                                    <div class="w-12 h-12 bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center active:scale-95 transition-transform shadow-lg">
+                                        <i class="fa-solid fa-cloud-sun text-white text-lg"></i>
+                                    </div>
+                                    <span class="text-white text-[10px] drop-shadow font-medium">天气</span>
+                                </div>
+                            </div>
+                            <!-- 下方照片卡 -->
+                            <div class="flex-1 rounded-2xl overflow-hidden shadow-lg border-2 border-white/30 cursor-pointer active:scale-[0.98] transition-transform"
+                                 onclick="Desktop.changePhoto('right')">
+                                <img id="desktop-photo-right2" src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=400&auto=format&fit=crop"
+                                     class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 底部 Dock -->
+                    <div class="dock-container h-16 flex justify-around items-center px-2 mt-3 mb-1 shrink-0">
+                        <div class="dock-item flex flex-col items-center gap-0.5 cursor-pointer active:scale-90 transition-transform" onclick="openView('call')">
+                            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow">
+                                <i class="fa-solid fa-phone text-white text-sm"></i>
+                            </div>
+                            <span class="text-white text-[10px] drop-shadow">通话</span>
+                        </div>
+                        <div class="dock-item flex flex-col items-center gap-0.5 cursor-pointer active:scale-90 transition-transform" onclick="openView('wechat')">
+                            <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow">
+                                <i class="fa-solid fa-comment text-white text-sm"></i>
+                            </div>
+                            <span class="text-white text-[10px] drop-shadow">聊天</span>
+                        </div>
+                        <div class="dock-item flex flex-col items-center gap-0.5 cursor-pointer active:scale-90 transition-transform" onclick="openView('call-history')">
+                            <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow">
+                                <i class="fa-solid fa-clock-rotate-left text-white text-sm"></i>
+                            </div>
+                            <span class="text-white text-[10px] drop-shadow">记录</span>
+                        </div>
+                        <div class="dock-item flex flex-col items-center gap-0.5 cursor-pointer active:scale-90 transition-transform" onclick="openView('settings-hub')">
+                            <div class="w-10 h-10 bg-gray-600 rounded-xl flex items-center justify-center shadow">
+                                <i class="fa-solid fa-gear text-white text-sm"></i>
+                            </div>
+                            <span class="text-white text-[10px] drop-shadow">设置</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 1: WECHAT MAIN — 微信风格主页
+                 =============================================== -->
+            <div id="view-wechat" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 1;">
+                <!-- Header -->
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 relative z-20 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">
+                        <i class="fa-solid fa-chevron-left mr-1"></i>返回
+                    </button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2" id="wechat-title">消息</h1>
+                    <div class="w-16 text-right flex justify-end gap-3 text-sm">
+                        <i class="fa-solid fa-search theme-text-secondary cursor-pointer active:opacity-50" onclick="toggleSearch()"></i>
+                        <i class="fa-solid fa-plus theme-text-secondary cursor-pointer active:opacity-50" onclick="handleWeChatPlus()"></i>
+                    </div>
+                </div>
+
+                <!-- 搜索栏 (默认隐藏) -->
+                <div id="wechat-search-bar" class="search-bar hidden mx-3 mt-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="搜索" id="wechat-search-input" oninput="Contacts.search(this.value)">
+                    <i class="fa-solid fa-xmark cursor-pointer text-xs" onclick="toggleSearch()" style="display:none" id="search-clear-btn"></i>
+                </div>
+
+                <!-- Tab 内容区 -->
+                <div class="flex-1 overflow-y-auto" id="wechat-content">
+                    <!-- Tab 1: 消息 (Messages) -->
+                    <div id="tab-messages" class="w-full">
+                        <div id="sessions-list">
+                            <div class="text-center text-sm theme-text-secondary py-10">暂无会话，去通讯录选择一个角色开始聊天吧</div>
+                        </div>
+                    </div>
+                    <!-- Tab 2: 通讯录 (Contacts) -->
+                    <div id="tab-contacts" class="w-full hidden">
+                        <div class="session-item" onclick="openView('add-friend')">
+                            <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mr-3"><i class="fa-solid fa-user-plus text-white"></i></div>
+                            <span class="theme-text text-[16px]">添加 AI 联系人</span>
+                        </div>
+                        <div class="px-4 py-2 text-xs theme-text-secondary font-medium bg-[var(--bg-alt)]">联系人列表</div>
+                        <div id="contacts-list">
+                            <div class="text-center text-sm theme-text-secondary py-10">暂无联系人，请先添加</div>
+                        </div>
+                    </div>
+                    <!-- Tab 3: 发现 (Discover) -->
+                    <div id="tab-discover" class="w-full hidden">
+                        <div class="mt-2">
+                            <div class="session-item" onclick="openView('moments')">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3"><i class="fa-solid fa-camera-retro text-[#fc7c22] text-xl"></i></div>
+                                <span class="theme-text text-[16px] flex-1">朋友圈</span>
+                                <div id="moments-red-dot" class="w-2 h-2 bg-red-500 rounded-full hidden mr-2"></div>
+                                <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab 4: 我 (Me) -->
+                    <div id="tab-me" class="w-full hidden">
+                        <div class="mt-2 session-item" onclick="openView('add-persona')">
+                            <div id="me-avatar" class="w-16 h-16 rounded-xl overflow-hidden bg-gray-200 mr-4">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1">
+                                <h2 class="text-xl font-medium theme-text" id="me-name">我</h2>
+                                <p class="text-sm theme-text-secondary mt-1" id="me-persona-desc">点击设置我的信息</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs ml-2"></i>
+                        </div>
+                        <div class="settings-group mx-3 mt-4">
+                            <div class="settings-item" onclick="openView('settings-hub')">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center"><i class="fa-solid fa-gear text-[#0e7bee] text-lg"></i></div>
+                                    <span class="theme-text text-[16px]">设置</span>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                            </div>
+                        </div>
+                        <div id="personas-list" class="mx-3 mt-2">
+                            <div class="text-xs theme-text-secondary px-1 py-2 font-medium">我的人格</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部导航栏 -->
+                <div class="h-[54px] theme-surface border-t theme-border flex justify-around items-center shrink-0 z-20" id="wechat-nav">
+                    <div class="wechat-tab flex flex-col items-center gap-0.5 cursor-pointer active" onclick="switchWeChatTab('messages')" data-tab="messages">
+                        <i class="fa-solid fa-comment text-lg tab-icon" style="color:var(--tab-active)"></i>
+                        <span class="text-[10px] font-medium tab-text" style="color:var(--tab-active)">消息</span>
+                    </div>
+                    <div class="wechat-tab flex flex-col items-center gap-0.5 cursor-pointer" onclick="switchWeChatTab('contacts')" data-tab="contacts">
+                        <i class="fa-regular fa-address-book text-lg tab-icon" style="color:var(--tab-inactive)"></i>
+                        <span class="text-[10px] font-medium tab-text" style="color:var(--tab-inactive)">通讯录</span>
+                    </div>
+                    <div class="wechat-tab flex flex-col items-center gap-0.5 cursor-pointer" onclick="switchWeChatTab('discover')" data-tab="discover">
+                        <i class="fa-regular fa-compass text-lg tab-icon" style="color:var(--tab-inactive)"></i>
+                        <span class="text-[10px] font-medium tab-text" style="color:var(--tab-inactive)">发现</span>
+                    </div>
+                    <div class="wechat-tab flex flex-col items-center gap-0.5 cursor-pointer" onclick="switchWeChatTab('me')" data-tab="me">
+                        <i class="fa-regular fa-user text-lg tab-icon" style="color:var(--tab-inactive)"></i>
+                        <span class="text-[10px] font-medium tab-text" style="color:var(--tab-inactive)">我</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 2: CHAT DETAIL — 聊天详情
+                 =============================================== -->
+            <div id="view-chat-detail" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 2;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 relative z-20 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">
+                        <i class="fa-solid fa-chevron-left mr-1"></i>返回
+                    </button>
+                    <div class="flex-1 text-center absolute left-1/2 -translate-x-1/2 bottom-2">
+                        <h1 class="text-base font-semibold theme-text" id="chat-title">静息 AI</h1>
+                        <p class="text-[11px] theme-text-secondary" id="chat-subtitle"></p>
+                    </div>
+                    <button class="w-16 text-right theme-text active:opacity-50 text-lg" onclick="openChatSettings()">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+                </div>
+
+                <!-- 引用回复横条 -->
+                <div id="quote-reply-bar" class="hidden mx-3 mt-2">
+                    <div class="quote-bar">
+                        <span class="quote-content" id="quote-reply-content"></span>
+                        <span class="quote-close" onclick="Chat.cancelQuote()">✕</span>
+                    </div>
+                </div>
+
+                <!-- 消息列表 -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-2 space-y-3">
+                    <div class="text-center text-xs theme-text-secondary my-4">— 加载中... —</div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="theme-surface border-t theme-border px-2 py-2 pb-6 sm:pb-2 shrink-0 z-20">
+                    <!-- 功能面板 -->
+                    <div id="function-panel" class="hidden grid grid-cols-4 gap-4 px-4 py-4 mb-2">
+                        <div class="flex flex-col items-center gap-1 cursor-pointer active:opacity-50" onclick="Chat.sendImage()">
+                            <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center"><i class="fa-regular fa-image text-red-500 text-xl"></i></div>
+                            <span class="text-[10px] theme-text-secondary">图片</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 cursor-pointer active:opacity-50" onclick="Chat.sendVoice()">
+                            <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-microphone text-blue-500 text-xl"></i></div>
+                            <span class="text-[10px] theme-text-secondary">语音</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 cursor-pointer active:opacity-50" onclick="openView('call')">
+                            <div class="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-phone text-green-500 text-xl"></i></div>
+                            <span class="text-[10px] theme-text-secondary">通话</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 cursor-pointer active:opacity-50" onclick="Chat.regenerate()">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center"><i class="fa-solid fa-rotate-right text-yellow-600 text-xl"></i></div>
+                            <span class="text-[10px] theme-text-secondary">重新生成</span>
+                        </div>
+                    </div>
+
+                    <!-- 表情面板 -->
+                    <div id="emoji-panel" class="emoji-panel hidden">
+                        <div class="tab-bar" id="emoji-tabs"></div>
+                        <div class="emoji-grid text-2xl" id="emoji-grid"></div>
+                    </div>
+
+                    <!-- 语音录制界面 -->
+                    <div id="voice-record-ui" class="hidden py-3 px-4">
+                        <div class="flex items-center justify-center gap-1 h-10" id="voice-waveform">
+                            <div class="voice-wave-bar" style="height:4px"></div><div class="voice-wave-bar" style="animation-delay:0.1s;height:4px"></div>
+                            <div class="voice-wave-bar" style="animation-delay:0.2s;height:4px"></div><div class="voice-wave-bar" style="animation-delay:0.3s;height:4px"></div>
+                            <div class="voice-wave-bar" style="animation-delay:0.4s;height:4px"></div><div class="voice-wave-bar" style="animation-delay:0.5s;height:4px"></div>
+                            <div class="voice-wave-bar" style="animation-delay:0.6s;height:4px"></div><div class="voice-wave-bar" style="animation-delay:0.7s;height:4px"></div>
+                        </div>
+                        <div class="text-center text-xs theme-text-secondary mt-2">松开发送，上滑取消</div>
+                    </div>
+
+                    <!-- 输入行 -->
+                    <div class="flex items-end gap-2">
+                        <button class="w-9 h-9 rounded-full flex items-center justify-center theme-text-secondary active:bg-[var(--surface-hover)] shrink-0 mb-0.5"
+                                onclick="Chat.toggleEmojiPanel()" id="btn-emoji">
+                            <i class="fa-regular fa-face-smile text-xl"></i>
+                        </button>
+                        <button class="w-9 h-9 rounded-full flex items-center justify-center theme-text-secondary active:bg-[var(--surface-hover)] shrink-0 mb-0.5"
+                                id="btn-voice-toggle" onclick="Chat.toggleVoiceInput()">
+                            <i class="fa-solid fa-microphone text-xl"></i>
+                        </button>
+                        <div class="flex-1 bg-[var(--input-bg)] rounded-2xl border theme-border overflow-hidden flex items-end min-h-[38px]" id="text-input-container">
+                            <textarea id="chat-input" class="w-full bg-transparent px-3 py-2 max-h-[100px] outline-none text-[15px] resize-none theme-text leading-relaxed"
+                                      rows="1" placeholder="发送消息..."></textarea>
+                        </div>
+                        <button class="w-16 h-[38px] bg-[var(--tab-active)] text-white rounded-xl font-medium active:opacity-80 shrink-0 shadow flex items-center justify-center text-sm"
+                                onclick="Chat.sendMessage()" id="btn-send">
+                            发送
+                        </button>
+                        <button class="w-9 h-9 rounded-full flex items-center justify-center theme-text-secondary active:bg-[var(--surface-hover)] shrink-0 mb-0.5"
+                                onclick="Chat.toggleFunctionPanel()" id="btn-plus">
+                            <i class="fa-solid fa-plus text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 3: SETTINGS HUB — 设置中心
+                 =============================================== -->
+            <div id="view-settings-hub" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 3;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 relative z-20 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">
+                        <i class="fa-solid fa-chevron-left mr-1"></i>返回
+                    </button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">设置</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto py-4">
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="openView('settings-api')">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-key text-blue-500 w-6 text-center"></i>
+                                <span class="theme-text">API 设置</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="settings-item" onclick="openView('settings-theme')">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-palette text-purple-500 w-6 text-center"></i>
+                                <span class="theme-text">主题设置</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="settings-item" onclick="openView('settings-message')">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-message text-green-500 w-6 text-center"></i>
+                                <span class="theme-text">消息设置</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="settings-item" onclick="openView('settings-data')">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-database text-orange-500 w-6 text-center"></i>
+                                <span class="theme-text">数据管理</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="openView('emoji-manage')">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-regular fa-face-grin text-yellow-500 w-6 text-center"></i>
+                                <span class="theme-text">表情管理</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="px-4 py-3 text-center text-xs theme-text-secondary">
+                        镜隙 Web 版 v1.1<br>基于 Android 版复刻
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 SETTINGS SUB-VIEWS
+                 =============================================== -->
+            <!-- API 设置 -->
+            <div id="view-settings-api" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 4;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">API 设置</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="text-xs theme-text-secondary font-medium mb-1">OpenAI 兼容 API</div>
+                        <div><label class="form-label">API 代理地址</label><input type="text" id="input-api-endpoint" class="form-input" placeholder="https://api.openai.com/v1/"></div>
+                        <div><label class="form-label">API 密钥</label><input type="password" id="input-api-key" class="form-input" placeholder="sk-..."></div>
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-1"><label class="form-label">模型名称</label><input type="text" id="input-api-model" class="form-input" placeholder="gpt-4o-mini"></div>
+                            <button class="btn btn-outline text-xs h-[42px] shrink-0" onclick="Settings.fetchModels()">获取模型</button>
+                        </div>
+                        <div id="models-list" class="hidden max-h-32 overflow-y-auto bg-[var(--input-bg)] rounded-lg"></div>
+                        <div><label class="form-label">Temperature: <span id="temp-value">0.8</span></label>
+                            <input type="range" min="0" max="2" step="0.1" value="0.8" id="input-temperature" oninput="document.getElementById('temp-value').textContent=this.value"></div>
+                    </div>
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="text-xs theme-text-secondary font-medium mb-1">图像生成 API (可选)</div>
+                        <div><label class="form-label">API 端点</label><input type="text" id="input-img-endpoint" class="form-input" placeholder="https://api.openai.com/v1/"></div>
+                        <div><label class="form-label">API 密钥</label><input type="password" id="input-img-key" class="form-input" placeholder="sk-..."></div>
+                    </div>
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="text-xs theme-text-secondary font-medium mb-1">天气 API</div>
+                        <div><label class="form-label">QWeather API Key (可选)</label><input type="text" id="input-qweather-key" class="form-input" placeholder="留空使用 Open-Meteo 免费 API"></div>
+                    </div>
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="text-xs theme-text-secondary font-medium mb-1">TTS 语音 API</div>
+                        <div><label class="form-label">MiniMax API Key</label><input type="password" id="input-tts-key" class="form-input" placeholder="用于文字转语音，留空跳过"></div>
+                        <div><label class="form-label">MiniMax Group ID</label><input type="text" id="input-tts-group" class="form-input" placeholder=""></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="btn btn-outline flex-1" onclick="Settings.loadPreset()">加载预设</button>
+                        <button class="btn btn-outline flex-1" onclick="Settings.savePreset()">保存预设</button>
+                    </div>
+                    <button class="btn btn-primary w-full mb-4" onclick="Settings.saveApi()">保存 API 配置</button>
+                </div>
+            </div>
+
+            <!-- 主题设置 -->
+            <div id="view-settings-theme" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 4;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">主题设置</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div class="settings-group p-4">
+                        <div class="text-xs theme-text-secondary font-medium mb-3">选择主题色彩</div>
+                        <div class="flex gap-4 justify-center">
+                            <div class="theme-option flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="ThemeManager.setTheme('yellow')">
+                                <div class="w-12 h-12 rounded-full bg-[#FFF59D] border-2 border-[#F9A825] shadow" id="theme-dot-yellow"></div>
+                                <span class="text-xs theme-text">暖黄</span>
+                            </div>
+                            <div class="theme-option flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="ThemeManager.setTheme('pink')">
+                                <div class="w-12 h-12 rounded-full bg-[#F8BBD0] border-2 border-transparent shadow" id="theme-dot-pink"></div>
+                                <span class="text-xs theme-text">樱粉</span>
+                            </div>
+                            <div class="theme-option flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="ThemeManager.setTheme('blue')">
+                                <div class="w-12 h-12 rounded-full bg-[#BBDEFB] border-2 border-transparent shadow" id="theme-dot-blue"></div>
+                                <span class="text-xs theme-text">天蓝</span>
+                            </div>
+                            <div class="theme-option flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform" onclick="ThemeManager.setTheme('white')">
+                                <div class="w-12 h-12 rounded-full bg-[#F5F5F5] border-2 border-[#E0E0E0] shadow" id="theme-dot-white"></div>
+                                <span class="text-xs theme-text">素白</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="ThemeManager.toggleDark()">
+                            <span class="theme-text">暗黑模式</span>
+                            <div class="toggle-switch" id="dark-mode-toggle"></div>
+                        </div>
+                        <div class="settings-item" onclick="ThemeManager.pickDesktopBg()">
+                            <span class="theme-text">桌面背景图</span>
+                            <span class="text-xs theme-text-secondary">点击更换</span>
+                        </div>
+                        <div class="settings-item" onclick="ThemeManager.clearDesktopBg()">
+                            <span class="theme-text">清除桌面背景</span>
+                            <span class="text-xs theme-text-secondary">恢复默认</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消息设置 -->
+            <div id="view-settings-message" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 4;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">消息设置</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div class="settings-group p-4 space-y-4">
+                        <div><label class="form-label">历史消息轮数: <span id="history-rounds-val">20</span></label>
+                            <input type="range" min="0" max="200" value="20" id="input-history-rounds" oninput="document.getElementById('history-rounds-val').textContent=this.value"></div>
+                        <div><label class="form-label">摘要触发轮数: <span id="summary-rounds-val">50</span></label>
+                            <input type="range" min="0" max="200" value="50" id="input-summary-rounds" oninput="document.getElementById('summary-rounds-val').textContent=this.value"></div>
+                        <div><label class="form-label">记忆调用数量: <span id="memory-count-val">5</span></label>
+                            <input type="range" min="0" max="20" value="5" id="input-memory-count" oninput="document.getElementById('memory-count-val').textContent=this.value"></div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="this.querySelector('.toggle-switch').classList.toggle('on')">
+                            <span class="theme-text">Memory 2.0</span>
+                            <div class="toggle-switch on" id="memory-v2-toggle"></div>
+                        </div>
+                        <div class="settings-item">
+                            <span class="theme-text">Memory 模式</span>
+                            <select id="input-memory-mode" class="bg-[var(--input-bg)] rounded px-2 py-1 text-sm theme-text border-none outline-none">
+                                <option value="economy">经济模式 (Economy)</option>
+                                <option value="immersive">沉浸模式 (Immersive)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-full" onclick="Settings.saveMessage()">保存消息设置</button>
+                </div>
+            </div>
+
+            <!-- 数据管理 -->
+            <div id="view-settings-data" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 4;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">数据管理</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="DataManager.exportAll()">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-export text-blue-500"></i><span class="theme-text">导出全部数据</span></div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                        <div class="settings-item" onclick="DataManager.importAll()">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-import text-green-500"></i><span class="theme-text">导入数据</span></div>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="DataManager.clearCache()">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-broom text-orange-500"></i><span class="theme-text">清除图片/音频缓存</span></div>
+                        </div>
+                        <div class="settings-item" onclick="DataManager.clearAll()">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-trash text-red-500"></i><span class="text-red-500">清除全部数据</span></div>
+                        </div>
+                    </div>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="DataManager.handleImport(event)">
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 5: ADD/EDIT FRIEND — 角色编辑器
+                 =============================================== -->
+            <div id="view-add-friend" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="theme-text w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">取消</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2" id="add-friend-title">添加联系人</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm font-medium" onclick="Contacts.saveFriend()" id="btn-save-friend">完成</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <input type="hidden" id="edit-friend-id" value="">
+                    <!-- 头像 -->
+                    <div class="flex justify-center mb-4">
+                        <div class="w-20 h-20 bg-[var(--input-bg)] rounded-2xl flex items-center justify-center cursor-pointer relative overflow-hidden" onclick="Contacts.pickAvatar()">
+                            <img id="friend-avatar-preview" src="" class="hidden w-full h-full object-cover absolute inset-0">
+                            <i class="fa-solid fa-camera theme-text-secondary text-2xl" id="friend-avatar-placeholder"></i>
+                        </div>
+                    </div>
+                    <!-- 基本信息 -->
+                    <div class="settings-group p-4 space-y-3">
+                        <div><label class="form-label">名字 *</label><input type="text" id="input-friend-name" class="form-input" placeholder="AI 角色名字"></div>
+                        <div><label class="form-label">昵称</label><input type="text" id="input-friend-nickname" class="form-input" placeholder="选填"></div>
+                        <div>
+                            <label class="form-label">人设 (System Prompt) *</label>
+                            <textarea id="input-friend-persona" class="form-input form-textarea" rows="4"
+                                placeholder="[性别: 女]
+        年龄: 20
+        性格: 温柔体贴、善解人意
+        爱好: 看书、听音乐
+        说话风格: 亲切自然，偶尔使用颜文字"></textarea>
+                        </div>
+                    </div>
+                    <!-- 语音设置 -->
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="text-xs theme-text-secondary font-medium mb-1">语音设置</div>
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-1"><label class="form-label">音色 ID (MiniMax)</label><input type="text" id="input-friend-voice-id" class="form-input" placeholder="例如: male-qn-qingse"></div>
+                        </div>
+                        <div><label class="form-label">语调 (Pitch): <span id="voice-pitch-val">5</span></label>
+                            <input type="range" min="0" max="9" value="5" id="input-friend-voice-pitch" oninput="document.getElementById('voice-pitch-val').textContent=this.value"></div>
+                        <div><label class="form-label">强度 (Intensity): <span id="voice-intensity-val">5</span></label>
+                            <input type="range" min="0" max="9" value="5" id="input-friend-voice-intensity" oninput="document.getElementById('voice-intensity-val').textContent=this.value"></div>
+                        <div><label class="form-label">音色 (Timbre): <span id="voice-timbre-val">5</span></label>
+                            <input type="range" min="0" max="9" value="5" id="input-friend-voice-timbre" oninput="document.getElementById('voice-timbre-val').textContent=this.value"></div>
+                        <div><label class="form-label">语速: <span id="voice-speed-val">1.0</span>x</label>
+                            <input type="range" min="5" max="20" value="10" id="input-friend-voice-speed" oninput="document.getElementById('voice-speed-val').textContent=(this.value/10).toFixed(1)"></div>
+                        <div>
+                            <label class="form-label">声音特效</label>
+                            <select id="input-friend-sound-effect" class="form-input">
+                                <option value="">无</option>
+                                <option value="spacious_echo">空间回声</option>
+                                <option value="auditorium_echo">礼堂回声</option>
+                                <option value="lofi_telephone">电话音效</option>
+                                <option value="robotic">机器人音效</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- 自动朋友圈 -->
+                    <div class="settings-group p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="theme-text text-sm">自动发朋友圈</span>
+                            <div class="toggle-switch" id="auto-moment-toggle" onclick="this.classList.toggle('on')"></div>
+                        </div>
+                        <div id="auto-moment-options" class="space-y-3 hidden">
+                            <div><label class="form-label">间隔 (小时): <span id="auto-moment-interval-val">8</span></label>
+                                <input type="range" min="1" max="24" value="8" id="input-auto-moment-interval" oninput="document.getElementById('auto-moment-interval-val').textContent=this.value"></div>
+                            <div class="flex gap-2">
+                                <div class="flex-1"><label class="form-label">开始时间</label><input type="time" id="input-auto-moment-start" class="form-input" value="08:00"></div>
+                                <div class="flex-1"><label class="form-label">结束时间</label><input type="time" id="input-auto-moment-end" class="form-input" value="22:00"></div>
+                            </div>
+                            <div><label class="form-label">触发概率: <span id="auto-moment-prob-val">50</span>%</label>
+                                <input type="range" min="0" max="100" value="50" id="input-auto-moment-prob" oninput="document.getElementById('auto-moment-prob-val').textContent=this.value"></div>
+                        </div>
+                    </div>
+                    <!-- 表情开关 -->
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="this.querySelector('.toggle-switch').classList.toggle('on')">
+                            <span class="theme-text">启用表情</span>
+                            <div class="toggle-switch on" id="friend-emoji-toggle"></div>
+                        </div>
+                    </div>
+                    <div class="h-10"></div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 6: ADD/EDIT PERSONA — 用户人格编辑器
+                 =============================================== -->
+            <div id="view-add-persona" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="theme-text w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">取消</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2" id="add-persona-title">添加人格</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm font-medium" onclick="Personas.savePersona()">完成</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <input type="hidden" id="edit-persona-name" value="">
+                    <div class="flex justify-center mb-4">
+                        <div class="w-20 h-20 bg-[var(--input-bg)] rounded-2xl flex items-center justify-center cursor-pointer relative overflow-hidden" onclick="Personas.pickAvatar()">
+                            <img id="persona-avatar-preview" src="" class="hidden w-full h-full object-cover absolute inset-0">
+                            <i class="fa-solid fa-camera theme-text-secondary text-2xl" id="persona-avatar-placeholder"></i>
+                        </div>
+                    </div>
+                    <div class="settings-group p-4 space-y-3">
+                        <div><label class="form-label">名字 *</label><input type="text" id="input-persona-name" class="form-input" placeholder="你的名字"></div>
+                        <div>
+                            <label class="form-label">人设描述</label>
+                            <textarea id="input-persona-desc" class="form-input form-textarea" rows="3"
+                                placeholder="[性别: 男]
+        年龄: 25
+        职业: 程序员
+        性格: 理性、内敛、偶尔幽默"></textarea>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="this.querySelector('.toggle-switch').classList.toggle('on')">
+                            <span class="theme-text">设为主要人格</span>
+                            <div class="toggle-switch" id="main-persona-toggle"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 7: MOMENTS — 朋友圈
+                 =============================================== -->
+            <div id="view-moments" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 w-full flex items-end pb-2 px-4 absolute top-0 left-0 z-40 shrink-0 moments-header-transparent" id="moments-header">
+                    <button class="text-white w-16 text-left active:opacity-50 drop-shadow-md text-sm" onclick="navigateBack()">
+                        <i class="fa-solid fa-chevron-left mr-1"></i>返回
+                    </button>
+                    <h1 class="text-transparent font-semibold text-base flex-1 text-center absolute left-1/2 -translate-x-1/2 bottom-2" id="moments-title">朋友圈</h1>
+                    <button class="text-white w-16 text-right active:opacity-50 drop-shadow-md" onclick="openView('create-moment')">
+                        <i class="fa-solid fa-camera text-lg"></i>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto" id="moments-scroll" onscroll="Moments.handleScroll()">
+                    <!-- 封面图 -->
+                    <div class="relative w-full h-64 bg-gray-200 mb-10">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2564&auto=format&fit=crop"
+                             class="w-full h-full object-cover" id="moments-cover">
+                        <div class="absolute -bottom-8 right-4 flex items-end gap-3">
+                            <span class="text-white text-base font-medium drop-shadow-md pb-1" id="moments-user-name">我</span>
+                            <div class="w-16 h-16 rounded-xl bg-gray-300 border-2 border-white overflow-hidden shadow">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" class="w-full h-full object-cover" id="moments-user-avatar">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 动态列表 -->
+                    <div id="moments-list" class="pb-8">
+                        <div class="text-center text-sm theme-text-secondary py-10">暂无动态</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 8: MOMENT DETAIL — 朋友圈详情
+                 =============================================== -->
+            <div id="view-moment-detail" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 6;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">详情</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto" id="moment-detail-content"></div>
+                <!-- 底部评论输入 -->
+                <div class="theme-surface border-t theme-border px-3 py-2 pb-6 shrink-0 flex items-end gap-2">
+                    <input type="text" id="comment-input" class="flex-1 bg-[var(--input-bg)] rounded-full px-4 py-2 text-sm outline-none theme-text" placeholder="写评论...">
+                    <button class="text-[var(--tab-active)] font-medium text-sm active:opacity-50" onclick="Moments.submitComment()">发送</button>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 9: CREATE MOMENT — 发布朋友圈
+                 =============================================== -->
+            <div id="view-create-moment" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 6;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="theme-text w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">取消</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">发布动态</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm font-medium" onclick="Moments.postNewMoment()">发布</button>
+                </div>
+                <div class="flex-1 p-4 space-y-3">
+                    <textarea id="new-moment-content" class="form-input form-textarea" rows="4" placeholder="这一刻的想法..."></textarea>
+                    <div class="grid grid-cols-3 gap-2" id="new-moment-images"></div>
+                    <button class="btn btn-outline w-full" onclick="Moments.addImageToNewMoment()"><i class="fa-solid fa-image mr-1"></i>添加图片</button>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 10: WEATHER — 天气
+                 =============================================== -->
+            <div id="view-weather" class="view-container view-hidden flex flex-col" style="z-index: 5; background: linear-gradient(180deg, #4A90D9 0%, #3678B5 50%, #235D94 100%);">
+                <div class="h-16 flex items-end pb-2 px-4 shrink-0 text-white">
+                    <button class="w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-medium flex-1 text-center absolute left-1/2 -translate-x-1/2 bottom-2" id="weather-city">北京</h1>
+                    <div class="w-16 text-right"><i class="fa-solid fa-location-dot text-sm"></i></div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-6 pt-8 pb-8 text-white">
+                    <div class="flex flex-col items-center mb-12">
+                        <i class="fa-solid fa-sun text-6xl mb-3 drop-shadow-lg" id="weather-main-icon"></i>
+                        <h2 class="text-7xl font-light drop-shadow-lg relative" id="weather-temp">24<span class="text-3xl absolute top-1 -right-6">°</span></h2>
+                        <p class="text-xl mt-2 drop-shadow-md" id="weather-desc">晴朗</p>
+                        <p class="text-sm mt-1 opacity-80" id="weather-range">最高 28° 最低 15°</p>
+                    </div>
+                    <div class="bg-white/20 backdrop-blur-md rounded-3xl p-5">
+                        <div class="flex items-center gap-2 mb-4 opacity-80 text-sm">
+                            <i class="fa-regular fa-calendar"></i><span>7天预报</span>
+                        </div>
+                        <div class="space-y-4" id="weather-forecast-list">
+                            <div class="text-center text-sm opacity-70">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 11: WORLDBOOK LIST — 世界书列表
+                 =============================================== -->
+            <div id="view-worldbook-list" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">世界书</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm" onclick="Worldbook.openEdit()"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <div id="worldbook-pre-section" class="mb-2"><div class="px-4 py-2 text-xs theme-text-secondary font-medium bg-[var(--bg-alt)]">Pre (对话前注入)</div></div>
+                    <div id="worldbook-mid-section" class="mb-2"><div class="px-4 py-2 text-xs theme-text-secondary font-medium bg-[var(--bg-alt)]">Mid (关键词触发)</div></div>
+                    <div id="worldbook-post-section"><div class="px-4 py-2 text-xs theme-text-secondary font-medium bg-[var(--bg-alt)]">Post (对话后注入)</div></div>
+                    <div id="worldbook-list"></div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 12: WORLDBOOK EDIT — 世界书编辑器
+                 =============================================== -->
+            <div id="view-worldbook-edit" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 6;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="theme-text w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()">取消</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2" id="worldbook-edit-title">编辑世界书</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm font-medium" onclick="Worldbook.saveEntry()">保存</button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <input type="hidden" id="edit-worldbook-id" value="">
+                    <div>
+                        <label class="form-label">类型</label>
+                        <select id="input-worldbook-type" class="form-input">
+                            <option value="0">Pre (对话前注入)</option>
+                            <option value="1">Mid (关键词触发)</option>
+                            <option value="2">Post (对话后注入)</option>
+                        </select>
+                    </div>
+                    <div><label class="form-label">标题</label><input type="text" id="input-worldbook-title" class="form-input" placeholder="世界书条目标题"></div>
+                    <div id="worldbook-keyword-group"><label class="form-label">触发关键词 (逗号分隔，仅 Mid 类型需要)</label><input type="text" id="input-worldbook-keyword" class="form-input" placeholder="关键词1,关键词2"></div>
+                    <div><label class="form-label">内容</label><textarea id="input-worldbook-content" class="form-input form-textarea" rows="6" placeholder="世界书内容..."></textarea></div>
+                    <div class="settings-group">
+                        <div class="settings-item" onclick="this.querySelector('.toggle-switch').classList.toggle('on')">
+                            <span class="theme-text">启用</span><div class="toggle-switch on" id="worldbook-enabled-toggle"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger w-full" onclick="Worldbook.deleteCurrent()" id="btn-delete-worldbook" style="display:none">删除此条目</button>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 13: MEMORY — 记忆查看器
+                 =============================================== -->
+            <div id="view-memory" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">记忆</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="p-2 border-b theme-border">
+                    <select id="memory-char-select" class="form-input text-sm" onchange="MemoryView.load()">
+                        <option value="">选择角色...</option>
+                    </select>
+                </div>
+                <!-- 记忆分类 Tab -->
+                <div class="tab-bar px-2">
+                    <span class="emoji-tab active" onclick="MemoryView.switchTab('memory')">记忆</span>
+                    <span class="emoji-tab" onclick="MemoryView.switchTab('profile')">用户画像</span>
+                    <span class="emoji-tab" onclick="MemoryView.switchTab('episodic')">情景记忆</span>
+                    <span class="emoji-tab" onclick="MemoryView.switchTab('billboard')">公告板</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-3" id="memory-content">
+                    <div class="text-center text-sm theme-text-secondary py-10">请选择角色查看记忆</div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 14: MEMO — 备忘录
+                 =============================================== -->
+            <div id="view-memo" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">备忘录</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="p-2 border-b theme-border">
+                    <select id="memo-char-select" class="form-input text-sm" onchange="MemoView.load()">
+                        <option value="">选择角色...</option>
+                    </select>
+                </div>
+                <div class="flex-1 overflow-y-auto" id="memo-list">
+                    <div class="text-center text-sm theme-text-secondary py-10">请选择角色查看备忘录</div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 15: SCHEDULE — 日程查看器
+                 =============================================== -->
+            <div id="view-schedule" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">日程</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="p-2 border-b theme-border flex gap-2">
+                    <select id="schedule-char-select" class="form-input text-sm flex-1" onchange="ScheduleView.load()">
+                        <option value="">选择角色...</option>
+                    </select>
+                    <input type="date" id="schedule-date" class="form-input text-sm flex-1" onchange="ScheduleView.load()">
+                </div>
+                <div class="flex-1 overflow-y-auto" id="schedule-content">
+                    <div class="text-center text-sm theme-text-secondary py-10">请选择角色和日期查看日程</div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 16: CALL — 通话界面
+                 =============================================== -->
+            <div id="view-call" class="view-container view-hidden call-container flex flex-col" style="z-index: 8;">
+                <div class="h-16 flex items-end pb-2 px-4 shrink-0">
+                    <button class="text-white/70 w-16 text-left active:opacity-50 text-sm" onclick="Call.endCall()">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center gap-6 px-6 -mt-10">
+                    <div class="w-24 h-24 rounded-2xl bg-white/20 overflow-hidden" id="call-avatar-container">
+                        <i class="fa-solid fa-robot text-white text-4xl flex items-center justify-center h-full"></i>
+                    </div>
+                    <h2 class="text-white text-2xl font-medium" id="call-name">静息 AI</h2>
+                    <p class="call-status" id="call-status-text">正在连接...</p>
+                    <div class="text-white/50 text-4xl font-mono" id="call-timer">00:00</div>
+                </div>
+                <div class="h-48 overflow-y-auto px-6 py-4" id="call-subtitle">
+                    <div class="text-white/60 text-sm text-center">— 实时字幕将在此显示 —</div>
+                </div>
+                <div class="pb-10 px-10 flex justify-around items-center shrink-0">
+                    <button class="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-lg"
+                            onclick="Call.endCall()">
+                        <i class="fa-solid fa-phone-slash text-white text-2xl"></i>
+                    </button>
+                    <button class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                            id="call-speak-btn" onclick="Call.toggleSpeak()">
+                        <i class="fa-solid fa-microphone text-white text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 17: CALL HISTORY — 通话记录
+                 =============================================== -->
+            <div id="view-call-history" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">通话记录</h1>
+                    <div class="w-16"></div>
+                </div>
+                <div class="flex-1 overflow-y-auto" id="call-history-list">
+                    <div class="text-center text-sm theme-text-secondary py-10">暂无通话记录</div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 VIEW 18: EMOJI MANAGE — 表情管理
+                 =============================================== -->
+            <div id="view-emoji-manage" class="view-container view-hidden theme-bg flex flex-col" style="z-index: 5;">
+                <div class="h-16 theme-surface flex items-end pb-2 px-4 shrink-0 border-b theme-border">
+                    <button class="text-[#576b95] w-16 text-left active:opacity-50 text-sm" onclick="navigateBack()"><i class="fa-solid fa-chevron-left mr-1"></i>返回</button>
+                    <h1 class="text-base font-semibold flex-1 text-center theme-text absolute left-1/2 -translate-x-1/2 bottom-2">表情管理</h1>
+                    <button class="text-[var(--tab-active)] w-16 text-right active:opacity-50 text-sm" onclick="EmojiManager.addEmoji()"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4">
+                    <div class="grid grid-cols-5 gap-3 text-3xl" id="emoji-manage-grid"></div>
+                </div>
+            </div>
+
+            <!-- ===============================================
+                 IMAGE DETAIL OVERLAY
+                 =============================================== -->
+            <div id="view-image-detail" class="hidden absolute inset-0 z-[200] flex items-center justify-center bg-black/95 opacity-0 transition-opacity duration-200"
+                 onclick="closeImageDetail()">
+                <img id="image-detail-img" src="" class="max-w-full max-h-full object-contain" onclick="event.stopPropagation()">
+            </div>
+
+            <!-- ===============================================
+                 CONTEXT MENU OVERLAY
+                 =============================================== -->
+            <div id="context-menu" class="context-menu hidden"></div>
+
+            <!-- ===============================================
+                 TOAST CONTAINER
+                 =============================================== -->
+            <div id="toast-container"></div>
+
+        </div><!-- /screen-content -->
+
+        <!-- Home Indicator -->
+        <div class="h-5 w-full absolute bottom-1 left-0 flex justify-center items-center z-[150] pointer-events-none">
+            <div class="w-28 h-1 bg-white/50 rounded-full"></div>
+        </div>
+    </div><!-- /app-container -->
+
+    <!-- Scripts -->
+    <script src="js/db.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(r => console.log('SW registered:', r.scope))
+                    .catch(err => console.log('SW failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

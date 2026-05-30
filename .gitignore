@@ -1,0 +1,31 @@
+# Android
+jingxiPhone/.gradle/
+jingxiPhone/build/
+jingxiPhone/app/build/
+jingxiPhone/app/release/
+jingxiPhone/local.properties
+jingxiPhone/.idea/
+*.apk
+*.aab
+*.jks
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logcat*.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (if any)
+node_modules/

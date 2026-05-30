@@ -1,0 +1,947 @@
+/* ============================================================
+   镜隙 (Jingxi) Web版 — 主题系统 & 自定义样式
+   完整复刻 Android 版 4 主题 + 暗黑模式
+   ============================================================ */
+
+/* === CSS Reset & Base === */
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* ============================================================
+   主题系统 (4 浅色 + 1 暗黑)
+   ============================================================ */
+
+/* Yellow (默认) — Android ThemeManager THEME_YELLOW */
+:root, [data-theme="yellow"] {
+    --primary: #FFF59D;
+    --primary-light: #FFFDE7;
+    --primary-dark: #F9A825;
+    --bg: #FFFCF5;
+    --bg-alt: #FFF8E1;
+    --surface: #FFFFFF;
+    --surface-hover: #F5F5F5;
+    --text-primary: #795548;
+    --text-secondary: #8D6E63;
+    --text-hint: #BCAAA4;
+    --bubble-left: #FFFFFF;
+    --bubble-right: #FFF9C4;
+    --bubble-voice: #E8F5E9;
+    --border: #E0E0E0;
+    --divider: #EEEEEE;
+    --accent: #FFC107;
+    --accent-light: #FFECB3;
+    --green: #4CAF50;
+    --green-light: #C8E6C9;
+    --red: #F44336;
+    --red-light: #FFCDD2;
+    --blue: #2196F3;
+    --blue-light: #BBDEFB;
+    --card-glass: rgba(255,255,255,0.85);
+    --card-glass-hover: rgba(255,255,255,0.95);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.12);
+    --nav-bg: rgba(255,255,255,0.9);
+    --tab-active: #07C160;
+    --tab-inactive: #999999;
+    --badge: #F44336;
+    --input-bg: #F5F5F5;
+    --backdrop: rgba(0,0,0,0.5);
+    --toast-bg: rgba(0,0,0,0.8);
+    --toast-text: #FFFFFF;
+}
+
+/* Pink 主题 — Android THEME_PINK */
+[data-theme="pink"] {
+    --primary: #F8BBD0;
+    --primary-light: #FCE4EC;
+    --primary-dark: #EC407A;
+    --bg: #FCE4EC;
+    --bg-alt: #F8BBD0;
+    --surface: #FFFFFF;
+    --surface-hover: #FFF0F5;
+    --text-primary: #880E4F;
+    --text-secondary: #AD1457;
+    --text-hint: #E91E63;
+    --bubble-left: #FFFFFF;
+    --bubble-right: #FCE4EC;
+    --bubble-voice: #E8F5E9;
+    --border: #F8BBD0;
+    --divider: #FCE4EC;
+    --accent: #F06292;
+    --accent-light: #FCE4EC;
+    --card-glass: rgba(255,255,255,0.85);
+    --card-glass-hover: rgba(255,255,255,0.95);
+    --nav-bg: rgba(255,255,255,0.9);
+    --tab-active: #F06292;
+    --input-bg: #FFF0F5;
+}
+
+/* Blue 主题 — Android THEME_BLUE */
+[data-theme="blue"] {
+    --primary: #BBDEFB;
+    --primary-light: #E3F2FD;
+    --primary-dark: #1976D2;
+    --bg: #E3F2FD;
+    --bg-alt: #BBDEFB;
+    --surface: #FFFFFF;
+    --surface-hover: #F0F8FF;
+    --text-primary: #0D47A1;
+    --text-secondary: #1565C0;
+    --text-hint: #42A5F5;
+    --bubble-left: #FFFFFF;
+    --bubble-right: #E3F2FD;
+    --bubble-voice: #E8F5E9;
+    --border: #BBDEFB;
+    --divider: #E3F2FD;
+    --accent: #64B5F6;
+    --accent-light: #E3F2FD;
+    --card-glass: rgba(255,255,255,0.85);
+    --card-glass-hover: rgba(255,255,255,0.95);
+    --nav-bg: rgba(255,255,255,0.9);
+    --tab-active: #42A5F5;
+    --input-bg: #F0F8FF;
+}
+
+/* White 主题 — Android THEME_WHITE */
+[data-theme="white"] {
+    --primary: #F5F5F5;
+    --primary-light: #FAFAFA;
+    --primary-dark: #BDBDBD;
+    --bg: #FFFFFF;
+    --bg-alt: #F5F5F5;
+    --surface: #FFFFFF;
+    --surface-hover: #F5F5F5;
+    --text-primary: #212121;
+    --text-secondary: #616161;
+    --text-hint: #9E9E9E;
+    --bubble-left: #F5F5F5;
+    --bubble-right: #E0E0E0;
+    --bubble-voice: #E8F5E9;
+    --border: #E0E0E0;
+    --divider: #EEEEEE;
+    --accent: #9E9E9E;
+    --accent-light: #EEEEEE;
+    --card-glass: rgba(255,255,255,0.85);
+    --card-glass-hover: rgba(255,255,255,0.95);
+    --nav-bg: rgba(255,255,255,0.95);
+    --tab-active: #212121;
+    --input-bg: #F5F5F5;
+}
+
+/* Dark 暗黑模式 — Android THEME_NIGHT */
+[data-theme="dark"],
+.dark-mode {
+    --primary: #424242;
+    --primary-light: #616161;
+    --primary-dark: #212121;
+    --bg: #121212;
+    --bg-alt: #1E1E1E;
+    --surface: #1E1E1E;
+    --surface-hover: #2C2C2C;
+    --text-primary: #E0E0E0;
+    --text-secondary: #BDBDBD;
+    --text-hint: #757575;
+    --bubble-left: #333333;
+    --bubble-right: #1A3A2A;
+    --bubble-voice: #1B3A1B;
+    --border: #333333;
+    --divider: #2C2C2C;
+    --accent: #64B5F6;
+    --accent-light: #1A237E;
+    --green: #66BB6A;
+    --green-light: #1B3A1B;
+    --red: #EF5350;
+    --red-light: #3A1B1B;
+    --blue: #42A5F5;
+    --blue-light: #1A237E;
+    --card-glass: rgba(30,30,30,0.85);
+    --card-glass-hover: rgba(44,44,44,0.95);
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.5);
+    --nav-bg: rgba(30,30,30,0.9);
+    --tab-active: #4CAF50;
+    --tab-inactive: #757575;
+    --badge: #EF5350;
+    --input-bg: #2C2C2C;
+    --backdrop: rgba(0,0,0,0.7);
+    --toast-bg: rgba(255,255,255,0.9);
+    --toast-text: #212121;
+}
+
+/* ============================================================
+   全局主题应用类
+   ============================================================ */
+.theme-bg { background-color: var(--bg) !important; }
+.theme-surface { background-color: var(--surface) !important; }
+.theme-text { color: var(--text-primary) !important; }
+.theme-text-secondary { color: var(--text-secondary) !important; }
+.theme-border { border-color: var(--border) !important; }
+.theme-input { background-color: var(--input-bg) !important; }
+
+/* ============================================================
+   视图过渡动画
+   ============================================================ */
+.view-container {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+}
+
+.view-hidden {
+    transform: translateX(100%);
+    pointer-events: none;
+}
+
+.view-visible {
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+/* 返回动画 (向左滑出) */
+.view-slide-back {
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+}
+
+/* 淡入淡出 */
+.fade-in {
+    animation: fadeIn 0.25s ease-out;
+}
+.fade-out {
+    animation: fadeOut 0.2s ease-in forwards;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* 底部弹出 */
+.slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+.slide-down {
+    animation: slideDown 0.25s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+@keyframes slideDown {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+}
+
+/* ============================================================
+   聊天气泡样式
+   ============================================================ */
+
+/* AI 消息气泡 (左) — 左上直角 */
+.msg-bubble-left {
+    background-color: var(--bubble-left);
+    color: var(--text-primary);
+    border-radius: 16px 16px 16px 4px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+/* 用户消息气泡 (右) — 右上直角 */
+.msg-bubble-right {
+    background-color: var(--bubble-right);
+    color: var(--text-primary);
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: var(--shadow);
+}
+
+/* 语音消息气泡 */
+.msg-bubble-voice {
+    background-color: var(--bubble-voice);
+    border-radius: 16px;
+}
+
+/* 系统消息 */
+.msg-system {
+    background-color: transparent;
+    color: var(--text-hint);
+    font-size: 0.75rem;
+}
+
+/* ============================================================
+   桌面样式
+   ============================================================ */
+
+/* 毛玻璃卡片 */
+.glass-card {
+    background: var(--card-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.glass-card-dark {
+    background: var(--card-glass);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Dock */
+.dock-container {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.dark-mode .dock-container {
+    background: rgba(30,30,30,0.6);
+    border-color: rgba(255,255,255,0.1);
+}
+
+/* ============================================================
+   朋友圈样式
+   ============================================================ */
+
+/* 朋友圈头部渐变 */
+.moments-header-transparent {
+    background: transparent;
+}
+
+.moments-header-solid {
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+
+/* 朋友圈图片网格 */
+.moments-img-grid-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2px;
+}
+.moments-img-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+}
+.moments-img-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2px;
+}
+
+/* ============================================================
+   表情面板
+   ============================================================ */
+.emoji-panel {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    height: 280px;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 8px;
+    overflow-y: auto;
+    height: calc(100% - 40px);
+}
+
+.emoji-tab {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.emoji-tab.active {
+    color: var(--tab-active);
+    border-bottom-color: var(--tab-active);
+}
+
+/* ============================================================
+   语音录制动画
+   ============================================================ */
+.voice-record-btn {
+    transition: all 0.15s ease-out;
+}
+.voice-record-btn:active,
+.voice-record-btn.recording {
+    transform: scale(1.1);
+    background-color: var(--red);
+    color: white;
+}
+
+/* 录音波形动画 */
+@keyframes voiceWave {
+    0%, 100% { height: 4px; }
+    50% { height: 16px; }
+}
+.voice-wave-bar {
+    width: 2px;
+    background: var(--tab-active);
+    border-radius: 1px;
+    animation: voiceWave 1.2s ease-in-out infinite;
+}
+
+/* 语音取消区域 */
+.voice-cancel-zone {
+    background: var(--red);
+    color: white;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.voice-cancel-zone.active {
+    opacity: 1;
+}
+
+/* ============================================================
+   iOS 风格开关
+   ============================================================ */
+.toggle-switch {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    border-radius: 14px;
+    background: var(--border);
+    transition: background 0.3s;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.toggle-switch.on {
+    background: var(--green);
+}
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+}
+.toggle-switch.on::after {
+    transform: translateX(20px);
+}
+
+/* ============================================================
+   消息上下文菜单
+   ============================================================ */
+.context-menu {
+    position: fixed;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 999;
+    min-width: 140px;
+    overflow: hidden;
+    animation: fadeIn 0.15s ease-out;
+}
+.context-menu-item {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.context-menu-item:hover,
+.context-menu-item:active {
+    background: var(--surface-hover);
+}
+.context-menu-item.danger {
+    color: var(--red);
+}
+.context-menu-divider {
+    height: 1px;
+    background: var(--divider);
+}
+
+/* ============================================================
+   引用回复横条
+   ============================================================ */
+.quote-bar {
+    background: var(--bg-alt);
+    border-left: 3px solid var(--tab-active);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.quote-bar .quote-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.quote-bar .quote-close {
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-hint);
+}
+
+/* ============================================================
+   Toast 提示
+   ============================================================ */
+.toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 9999;
+    pointer-events: none;
+    animation: toastIn 0.3s ease-out, toastOut 0.3s 1.7s ease-in forwards;
+}
+@keyframes toastIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes toastOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ============================================================
+   Modal 对话框
+   ============================================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--backdrop);
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+.modal-dialog {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px;
+    max-width: 320px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 12px;
+}
+.modal-body {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+.modal-buttons {
+    display: flex;
+    gap: 8px;
+}
+.modal-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.2s;
+}
+.modal-btn:active {
+    opacity: 0.7;
+}
+.modal-btn-cancel {
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+.modal-btn-confirm {
+    background: var(--tab-active);
+    color: white;
+}
+.modal-btn-danger {
+    background: var(--red);
+    color: white;
+}
+
+/* ============================================================
+   搜索栏
+   ============================================================ */
+.search-bar {
+    background: var(--input-bg);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-hint);
+    margin: 8px 12px;
+}
+.search-bar input {
+    background: transparent;
+    border: none;
+    outline: none;
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+.search-bar input::placeholder {
+    color: var(--text-hint);
+}
+
+/* ============================================================
+   会话列表项
+   ============================================================ */
+.session-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--divider);
+    position: relative;
+}
+.session-item:active {
+    background: var(--surface-hover);
+}
+.session-item.pinned {
+    background: var(--bg-alt);
+}
+.session-badge {
+    position: absolute;
+    top: 6px;
+    right: 16px;
+    background: var(--badge);
+    color: white;
+    font-size: 10px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    font-weight: 600;
+}
+
+/* ============================================================
+   联系人列表
+   ============================================================ */
+.contact-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--divider);
+}
+.contact-item:active {
+    background: var(--surface-hover);
+}
+
+/* ============================================================
+   设置列表项
+   ============================================================ */
+.settings-group {
+    background: var(--surface);
+    border-radius: 12px;
+    margin: 8px 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+.settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--divider);
+}
+.settings-item:last-child {
+    border-bottom: none;
+}
+.settings-item:active {
+    background: var(--surface-hover);
+}
+
+/* ============================================================
+   按钮样式
+   ============================================================ */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.btn:active {
+    transform: scale(0.97);
+}
+.btn-primary {
+    background: var(--tab-active);
+    color: white;
+}
+.btn-danger {
+    background: var(--red);
+    color: white;
+}
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+.btn-ghost {
+    background: transparent;
+    color: var(--accent);
+}
+
+/* ============================================================
+   表单输入样式
+   ============================================================ */
+.form-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: block;
+}
+.form-input {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.form-input:focus {
+    border-color: var(--tab-active);
+}
+.form-input::placeholder {
+    color: var(--text-hint);
+}
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+/* ============================================================
+   Slider 滑块样式
+   ============================================================ */
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--tab-active);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ============================================================
+   头像样式
+   ============================================================ */
+.avatar {
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--input-bg);
+}
+.avatar-sm { width: 36px; height: 36px; }
+.avatar-md { width: 48px; height: 48px; }
+.avatar-lg { width: 64px; height: 64px; }
+.avatar-xl { width: 80px; height: 80px; }
+
+/* ============================================================
+   标签/徽章
+   ============================================================ */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--accent-light);
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   打字指示器
+   ============================================================ */
+.typing-dots {
+    display: flex;
+    gap: 3px;
+    padding: 8px 0;
+}
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-hint);
+    animation: typingBounce 1.4s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ============================================================
+   通话界面样式
+   ============================================================ */
+.call-container {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+}
+.call-status {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* ============================================================
+   TabLayout (表情分组用)
+   ============================================================ */
+.tab-bar {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--divider);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   进度条
+   ============================================================ */
+.progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.progress-bar-fill {
+    height: 100%;
+    background: var(--tab-active);
+    border-radius: 2px;
+    transition: width 0.3s ease-out;
+}
+
+/* ============================================================
+   文件导入/导出
+   ============================================================ */
+.drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    color: var(--text-hint);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.drop-zone:hover,
+.drop-zone.dragover {
+    border-color: var(--tab-active);
+    color: var(--tab-active);
+    background: var(--accent-light);
+}
+
+/* ============================================================
+   响应式辅助
+   ============================================================ */
+@media (max-width: 430px) {
+    #app-container {
+        border-radius: 0 !important;
+        border: none !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
+}
+
+/* 桌面端居中显示手机框 */
+@media (min-width: 431px) {
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #e5e7eb;
+    }
+}

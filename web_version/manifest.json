@@ -1,0 +1,20 @@
+{
+  "name": "镜隙 - Jingxi",
+  "short_name": "镜隙",
+  "description": "AI 智能聊天伴侣 - 网页版",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFCF5",
+  "theme_color": "#FFFCF5",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=jingxi",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "lang": "zh-CN"
+}

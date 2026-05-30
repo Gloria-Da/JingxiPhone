@@ -1,0 +1,8 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "web_version",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/$1" }
+  ]
+}
