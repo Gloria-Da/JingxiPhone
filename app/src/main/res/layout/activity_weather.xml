@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?android:attr/windowBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="?attr/colorTextPrimary"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+        
+        <ImageView
+            android:id="@+id/ivWeatherCharacterAvatar"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="end"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:src="@drawable/ic_launcher_round" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+            
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="?attr/colorPrimary">
+                
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:gravity="center">
+                    
+                    <TextView
+                        android:id="@+id/tvCity"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="城市"
+                        android:textSize="24sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textStyle="bold" />
+                        
+                    <TextView
+                        android:id="@+id/tvTemp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="26°C"
+                        android:textSize="64sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp" />
+                        
+                    <TextView
+                        android:id="@+id/tvDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="多云"
+                        android:textSize="20sp"
+                        android:textColor="?attr/colorTextPrimary" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Hourly Forecast -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_card"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="24小时预报"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"/>
+                    
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvHourlyForecast"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </LinearLayout>
+
+            <!-- Weather Reminder Memo -->
+            <LinearLayout
+                android:id="@+id/llWeatherReminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_diary_page"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvReminderTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ta的便签"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvWeatherReminder"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorTextPrimary"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="4dp"/>
+                    
+                <TextView
+                    android:id="@+id/tvRegenerateReminder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="重新生成"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="12sp"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:padding="4dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <!-- Daily Forecast -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_glass_card"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="多日天气预报"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp"/>
+                    
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvDailyForecast"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

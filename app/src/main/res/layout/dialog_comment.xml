@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/colorCardBackground"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="评论"
+        android:textColor="?attr/colorTextPrimary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <MultiAutoCompleteTextView
+        android:id="@+id/et_comment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_edit_text_rounded"
+        android:gravity="top|start"
+        android:hint="说点什么..."
+        android:minLines="3"
+        android:padding="12dp"
+        android:textColor="?attr/colorTextPrimary"
+        android:textColorHint="?attr/colorTextSecondary"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_cancel"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="取消"
+            android:textColor="?attr/colorTextSecondary" />
+
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/bg_btn_rounded"
+            android:text="发送"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+</LinearLayout>

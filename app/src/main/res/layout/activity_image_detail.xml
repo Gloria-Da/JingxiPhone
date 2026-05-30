@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorTextPrimary">
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/photo_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:id="@+id/tv_virtual_desc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="32dp"
+        android:background="#88000000"
+        android:padding="16dp"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_retry_generate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="重新生成图片"
+        android:visibility="gone" />
+
+</FrameLayout>

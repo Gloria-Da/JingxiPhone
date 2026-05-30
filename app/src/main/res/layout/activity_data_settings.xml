@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?android:attr/windowBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Light"
+        android:elevation="4dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导出数据"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="将目前所有的角色、人设、聊天记录以及各种系统设置导出一个完整的文件备份。导出的文件将会是.zip格式压缩包。"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnExport"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="导出备份 (.zip)"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:layout_marginBottom="32dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorDivider"
+                android:layout_marginBottom="32dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="导入数据"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="选择之前导出的 .zip 文件来恢复数据。注意：导入数据会完全覆盖当前所有的数据与设置！请谨慎操作！"
+                android:textColor="#FF5722"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnImport"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="导入备份 (.zip)"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:layout_marginBottom="32dp" />
+                
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorDivider"
+                android:layout_marginBottom="32dp"/>
+                
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="清空数据"
+                android:textSize="18sp"
+                android:textColor="#F44336"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="清空应用内所有聊天记录、角色数据、人设数据及设置。此操作不可逆，请务必提前备份！"
+                android:textColor="#F44336"
+                android:layout_marginBottom="16dp"/>
+
+            <Button
+                android:id="@+id/btnClearData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="清空所有数据 (危险)"
+                android:textColor="#F44336"
+                android:backgroundTint="#FFEBEE"/>
+                
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btnClearCache"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="清理图片缓存"
+                    android:textColor="#8D6E63"
+                    android:backgroundTint="#FFF0E0"/>
+                <TextView
+                    android:id="@+id/tvImageCacheSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="0.00 MB"
+                    android:textColor="?attr/colorTextSecondary"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btnClearAudioCache"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="清理语音缓存"
+                    android:textColor="?attr/colorTextPrimary"
+                    android:backgroundTint="#FFF0E0"/>
+                <TextView
+                    android:id="@+id/tvAudioCacheSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:text="0.00 MB"
+                    android:textColor="?attr/colorTextSecondary"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

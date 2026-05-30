@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="消息与记忆设置"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorTextPrimary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- History Rounds -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="调用历史消息轮数 (0-200)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+                <SeekBar
+                    android:id="@+id/sbHistoryRounds"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="200" />
+                <EditText
+                    android:id="@+id/etHistoryRounds"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <!-- Memory Summary Rounds -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="普通记忆总结触发轮数 (0-200, 0即不总结)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+                <SeekBar
+                    android:id="@+id/sbSummaryRounds"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="200" />
+                <EditText
+                    android:id="@+id/etSummaryRounds"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <!-- Memory Call Count -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="每次调用AI携带的普通记忆条数 (0表示调用全部)"
+                android:textColor="?attr/colorTextPrimary" />
+            <EditText
+                android:id="@+id/etMemoryCallCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginBottom="24dp" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="保存设置" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

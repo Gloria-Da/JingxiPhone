@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorDivider"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/btn_relationship_network"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintTop_toBottomOf="@id/divider">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_share"
+            app:tint="?attr/colorTextPrimary"
+            android:background="@drawable/bg_main_badge"
+            android:padding="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="人际关系网络"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="16sp"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorDivider"
+        app:layout_constraintTop_toBottomOf="@id/btn_relationship_network" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvFriendsList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/divider2"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

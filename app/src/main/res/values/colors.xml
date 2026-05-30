@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#FFF59D</color>
+    <color name="colorPrimaryDark">#FFF176</color>
+    <color name="colorAccent">#FFB300</color>
+    
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="colorBackground">#FFFCF5</color>
+    <color name="background_light">#FFFCF5</color>
+    <color name="text_primary">#795548</color>
+    <color name="text_brown">#795548</color>
+    <color name="text_brown_light">#A1887F</color>
+    <color name="bg_off_white">#FFFCF5</color>
+    <color name="text_secondary">#A1887F</color>
+    <color name="pinned_session_bg">#EFEBE9</color>
+    <color name="divider_color">#D7CCC8</color>
+    <color name="card_bg">#FFFCF5</color>
+    <color name="bg_light_gray">#F5F5F5</color>
+    <color name="text_gray">#888888</color>
+    <color name="main_brown">#8B4513</color>
+    <color name="colorTextSecondary">#888888</color>
+
+    <!-- Theme Settings Colors -->
+    <color name="theme_pink_bg">#FFF0F5</color>
+    <color name="theme_blue_bg">#F0F8FF</color>
+    <color name="theme_dark_bg">#121212</color>
+    
+    <!-- Theme Pink -->
+    <color name="pink_primary">#F8BBD0</color>
+    <color name="pink_primary_dark">#F48FB1</color>
+    <color name="pink_accent">#F06292</color>
+    <color name="pink_bg">#FCE4EC</color>
+    
+    <!-- Theme Blue -->
+    <color name="blue_primary">#BBDEFB</color>
+    <color name="blue_primary_dark">#90CAF9</color>
+    <color name="blue_accent">#64B5F6</color>
+    <color name="blue_bg">#E3F2FD</color>
+    
+    <!-- Theme White -->
+    <color name="white_primary">#F5F5F5</color>
+    <color name="white_primary_dark">#E0E0E0</color>
+    <color name="white_accent">#9E9E9E</color>
+    <color name="white_bg">#FFFFFF</color>
+    
+    <!-- Theme Dark -->
+    <color name="dark_primary">#424242</color>
+    <color name="dark_primary_dark">#212121</color>
+    <color name="dark_accent">#757575</color>
+    <color name="dark_bg">#303030</color>
+    <color name="dark_text">#E0E0E0</color>
+    
+    <!-- Desktop Theme -->
+    <color name="desktop_overlay_dark">#66000000</color>
+    <!-- <color name="colorBackground">#F5F5F5</color> -->
+    <!-- <color name="colorTextSecondary">#757575</color> -->
+    
+    <!-- 卡片背景颜色 -->
+    <color name="white_card_bg">#D9FFFFFF</color>
+    <color name="yellow_bg">#FFFCF5</color>
+    <color name="yellow_card_bg">#D9FFFDE7</color>
+    <color name="pink_card_bg">#D9FCE4EC</color>
+    <color name="blue_card_bg">#D9E3F2FD</color>
+    <color name="dark_card_bg">#D9212121</color>
+    
+    <!-- 聊天气泡背景颜色 -->
+    <color name="bubble_right_yellow">#FFF9C4</color>
+    <color name="bubble_right_pink">#FCE4EC</color>
+    <color name="bubble_right_blue">#E3F2FD</color>
+    <color name="bubble_right_white">#E0E0E0</color>
+    <color name="bubble_right_default">#FFFDE7</color>
+    <color name="bubble_left_dark">#333333</color>
+    <color name="bubble_right_dark">#1A1A1A</color>
+    
+    <!-- EditText / Input background for Memory list -->
+    <color name="dark_input_bg">#303030</color>
+</resources>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        app:title="新建/编辑我的人设"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="24dp">
+
+                <ImageView
+                    android:id="@+id/ivAvatarInput"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_launcher_round"
+                    android:background="@drawable/bg_avatar_placeholder"
+                    android:clickable="true"
+                    android:focusable="true"/>
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="bottom|end"
+                    android:src="@android:drawable/ic_menu_add"
+                    android:background="@drawable/bg_white_round"
+                    android:padding="4dp"
+                    android:elevation="4dp"/>
+            </FrameLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPersonaName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="人设名称 (必填, 唯一)" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etGender"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="性别" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPersonaDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minLines="5"
+                    android:gravity="top|start"
+                    android:hint="人设设定 (如: 职业, 性格...)" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <CheckBox
+                android:id="@+id/cbIsMain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设为主人设"
+                android:layout_marginBottom="24dp" />
+
+            <Button
+                android:id="@+id/btnSavePersona"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="保存" />
+        </LinearLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

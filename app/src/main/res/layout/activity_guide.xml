@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="?android:colorBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="48dp"
+        android:src="@drawable/ic_launcher"
+        app:tint="?attr/colorPrimary" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="欢迎使用境隙"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="?android:textColorPrimary" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="为了确保 AI 能在后台稳定为您回复消息，我们需要进行一些重要设置。"
+        android:textSize="16sp"
+        android:textColor="?android:textColorSecondary"
+        android:gravity="center" />
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="?android:colorBackgroundFloating">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 通知权限 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="通知权限"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="?android:textColorPrimary" />
+                        
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="用于保证服务在后台存活"
+                        android:textSize="14sp"
+                        android:textColor="?android:textColorSecondary" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnNotification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="去授权"
+                    style="@style/Widget.AppCompat.Button.Colored" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="?android:listDivider" />
+
+            <!-- 电池优化 (改为文字指引) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="为了让AI能随时给你发消息，请允许应用在后台运行："
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:textColorPrimary" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="• OPPO: 设置 - 电池 - 省电设置 - 应用耗电管理 - 镜隙 - 完全允许后台行为\n• 小米: 设置 - 应用设置 - 应用管理 - 镜隙 - 省电策略 - 无限制\n• 华为/荣耀: 设置 - 应用 - 应用管理 - 镜隙 - 耗电详情 - 启动管理 - 关闭自动管理，允许后台运行\n• vivo: 设置 - 电池 - 后台耗电管理 - 镜隙 - 允许后台高耗电"
+                    android:textSize="13sp"
+                    android:textColor="?android:textColorSecondary"
+                    android:lineSpacingExtra="4dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="忽略电池优化"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:textColor="?android:textColorPrimary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="确保后台任务不被系统强杀"
+                            android:textSize="13sp"
+                            android:textColor="?android:textColorSecondary" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnBatteryOptimization"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="去设置"
+                        style="@style/Widget.AppCompat.Button.Colored" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/btnFinish"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:padding="12dp"
+        android:text="进入应用"
+        android:textSize="16sp"
+        android:background="@drawable/bg_btn_rounded"
+        android:textColor="@android:color/white" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorCardBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorCardBackground"
+        android:elevation="4dp">
+
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_revert" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="发动态"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_publish"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_btn_rounded"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="6dp"
+            android:text="发布"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+    </androidx.appcompat.widget.Toolbar>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 身份选择 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="发布身份: "
+                    android:textColor="?attr/colorTextPrimary"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/sp_publisher"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <MultiAutoCompleteTextView
+                android:id="@+id/et_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:gravity="top|start"
+                android:hint="这一刻的想法..."
+                android:minLines="5"
+                android:textColor="?attr/colorTextPrimary"
+                android:textColorHint="?attr/colorTextSecondary"
+                android:textSize="16sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_images"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+            <ImageView
+                android:id="@+id/iv_add_image"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginTop="16dp"
+                android:background="#F0F0F0"
+                android:scaleType="centerCrop"
+                android:padding="30dp"
+                android:src="@android:drawable/ic_menu_camera"
+                android:visibility="visible" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

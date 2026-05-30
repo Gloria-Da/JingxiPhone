@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>人际网络</title>
+    <!-- 使用在线CDN引入ECharts，为了避免包体积过大，优先使用CDN。实际生产中可能需要下载到本地 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; background-color: #f7f9fc; overflow: hidden; }
+        #main { width: 100%; height: 100%; }
+        /* 隐藏加载动画 */
+        #loading {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px; color: #888;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">加载中...</div>
+    <div id="main"></div>
+    <script>
+        var chart = echarts.init(document.getElementById('main'));
+        var loadingEl = document.getElementById('loading');
+        
+        window.onresize = function() {
+            chart.resize();
+        };
+        
+        // 监听 Android 发来的数据
+        function renderGraph(nodesJson, edgesJson) {
+            loadingEl.style.display = 'none';
+            try {
+                var nodesData = JSON.parse(nodesJson);
+                var edgesData = JSON.parse(edgesJson);
+                
+                // 处理节点样式
+                var echartNodes = nodesData.map(function(node) {
+                    var color = '#91cc75'; // 默认虚拟人物绿色
+                    var symbolSize = 40;
+                    
+                    if (node.type === 0) { // Character
+                        color = '#5470c6'; // 蓝色
+                        symbolSize = 55;
+                    } else if (node.type === 1) { // User
+                        color = '#fac858'; // 橙色
+                        symbolSize = 60;
+                    }
+                    
+                    return {
+                        id: node.id,
+                        name: node.name,
+                        value: node.description,
+                        symbolSize: symbolSize,
+                        itemStyle: { color: color },
+                        // 可以根据 type 分类，这里简化
+                        category: node.type
+                    };
+                });
+                
+                // 处理连线
+                var echartEdges = edgesData.map(function(edge) {
+                    return {
+                        id: edge.id,
+                        source: edge.sourceNodeId,
+                        target: edge.targetNodeId,
+                        value: edge.relation, // Store relation text in value for click event
+                        label: {
+                            show: true,
+                            formatter: edge.relation,
+                            fontSize: 12
+                        },
+                        lineStyle: { width: 2, curveness: 0.2 }
+                    };
+                });
+                
+                var option = {
+                    tooltip: {
+                        formatter: function (params) {
+                            if (params.dataType === 'node') {
+                                return '<b>' + params.data.name + '</b><br/>' + (params.data.value || '无简介');
+                            }
+                            return params.data.label.formatter;
+                        }
+                    },
+                    animationDurationUpdate: 1500,
+                    animationEasingUpdate: 'quinticInOut',
+                    series: [
+                        {
+                            type: 'graph',
+                            layout: 'force',
+                            data: echartNodes,
+                            edges: echartEdges,
+                            roam: true,
+                            label: {
+                                show: true,
+                                position: 'bottom',
+                                formatter: '{b}'
+                            },
+                            force: {
+                                repulsion: 300,
+                                edgeLength: 120
+                            },
+                            lineStyle: {
+                                color: '#999999',
+                                curveness: 0.2
+                            },
+                            emphasis: {
+                                focus: 'adjacency',
+                                lineStyle: { width: 4 }
+                            }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                
+                // 先解绑之前的事件，防止多次刷新导致重复触发
+                chart.off('click');
+                // 点击事件回传给 Android
+                chart.on('click', function (params) {
+                    if (params.dataType === 'node') {
+                        if (window.Android) {
+                            window.Android.onNodeClicked(params.data.id, params.data.name, params.data.value || "", params.data.category || 0);
+                        }
+                    } else if (params.dataType === 'edge') {
+                        if (window.Android) {
+                            // Using data index or value
+                            window.Android.onEdgeClicked(params.data.id, params.data.source, params.data.target, params.data.value || "");
+                        }
+                    }
+                });
+                
+            } catch (e) {
+                console.error("渲染失败: " + e.message);
+                loadingEl.innerText = "数据解析错误";
+                loadingEl.style.display = 'block';
+            }
+        }
+        
+        // 测试用
+        // renderGraph('[{"id":"1","name":"A","type":0},{"id":"2","name":"B","type":1}]', '[{"sourceNodeId":"1","targetNodeId":"2","relation":"Test"}]');
+    </script>
+</body>
+</html>

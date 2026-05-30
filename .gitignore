@@ -1,13 +1,11 @@
-# Android
-jingxiPhone/.gradle/
-jingxiPhone/build/
-jingxiPhone/app/build/
-jingxiPhone/app/release/
-jingxiPhone/local.properties
-jingxiPhone/.idea/
-*.apk
-*.aab
-*.jks
+# Android Gradle
+.gradle/
+build/
+app/build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
 
 # IDE
 .idea/
@@ -19,13 +17,19 @@ jingxiPhone/.idea/
 Thumbs.db
 Desktop.ini
 
-# Logs
+# Logs & temp
 *.log
 logcat*.txt
-
-# Python
-__pycache__/
 *.pyc
+__pycache__/
 
-# Node (if any)
+# Android release
+*.apk
+*.aab
+*.jks
+
+# Old directory
+Jingxiphone/
+
+# Node
 node_modules/

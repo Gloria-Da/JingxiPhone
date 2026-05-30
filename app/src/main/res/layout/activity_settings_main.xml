@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="?attr/colorTextPrimary"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <Button
+                android:id="@+id/btnApiSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:text="API 设置"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnVoiceSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:text="语音设置"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnMessageSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:text="消息设置"
+                android:textSize="16sp" />
+
+
+            <Button
+                android:id="@+id/btnDataSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:text="数据管理"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnEmojiSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:text="表情管理"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/btnLogSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="查看日志"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
