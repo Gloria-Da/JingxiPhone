@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 太阳 (部分被遮挡) -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M8.5,7a4.5,4.5 0 1,1 -4.5,4.5 4.5,4.5 0 0,1 4.5,-4.5z"/>
+        
+    <!-- 云朵主体 -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M17.5,18H6.5A4.5,4.5 0 0,1 6.5,9a4.5,4.5 0 0,1 1.25,0.18 5.5,5.5 0 0,1 10.43,2.44A3.5,3.5 0 0,1 17.5,18Z"/>
+        
+    <!-- 云朵高光 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17.5,17H6.5A3.5,3.5 0 0,1 6.5,10a3.5,3.5 0 0,1 0.77,0.09 4.5,4.5 0 0,1 8.57,2.05A2.5,2.5 0 0,1 17.5,17Z"/>
+        
+</vector>

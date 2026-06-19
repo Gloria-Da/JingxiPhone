@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorCardBackground"
+        app:titleTextColor="?attr/colorTextPrimary" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 说明文字 -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="控制哪些个人数据可以被 AI 角色感知。所有数据仅存储在本地，不会上传至任何服务器。"
+                android:textSize="13sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:padding="12dp"
+                android:background="?attr/colorCardBackground"
+                android:layout_marginBottom="16dp" />
+
+            <!-- ===== 日历事件 ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/colorCardBackground"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="📅 日历事件"
+                        android:textSize="16sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchCalendar"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="让 AI 知道你今天的日程安排和近期事件"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:layout_marginTop="4dp" />
+
+                <!-- 角色选择行 -->
+                <LinearLayout
+                    android:id="@+id/rowCalendarChars"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="适用角色："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvCalendarChars"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="未选择"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnCalendarChars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="编辑"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <!-- 人设选择行 -->
+                <LinearLayout
+                    android:id="@+id/rowCalendarPersona"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="使用人设："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvCalendarPersona"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="默认（主人设）"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnCalendarPersona"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="更换"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ===== 课程表 ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/colorCardBackground"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="📚 课程表"
+                        android:textSize="16sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchCourse"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="让 AI 知道你今天的课程安排和时间"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:layout_marginTop="4dp" />
+
+                <LinearLayout
+                    android:id="@+id/rowCourseChars"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="适用角色："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvCourseChars"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="未选择"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnCourseChars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="编辑"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowCoursePersona"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="使用人设："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvCoursePersona"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="默认（主人设）"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnCoursePersona"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="更换"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ===== 经期数据 ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="?attr/colorCardBackground"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🩺 经期数据"
+                        android:textSize="16sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchPeriod"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="让 AI 了解你的经期状态，提供贴心关怀"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:layout_marginTop="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚠ 经期数据属于敏感个人信息，请仅对信任的角色开启"
+                    android:textSize="11sp"
+                    android:textColor="#E57373"
+                    android:layout_marginTop="4dp" />
+
+                <LinearLayout
+                    android:id="@+id/rowPeriodChars"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="适用角色："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvPeriodChars"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="未选择"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnPeriodChars"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="编辑"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowPeriodPersona"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="使用人设："
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextSecondary" />
+
+                    <TextView
+                        android:id="@+id/tvPeriodPersona"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="默认（主人设）"
+                        android:textSize="13sp"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:paddingStart="4dp" />
+
+                    <TextView
+                        android:id="@+id/btnPeriodPersona"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="更换"
+                        android:textSize="11sp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="5dp"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

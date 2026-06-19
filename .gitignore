@@ -27,5 +27,4 @@ app/build/
 .idea/
 .vscode/
 
-# Ignore old/temp directories
-Jingxiphone/
+# Ignore temp directories

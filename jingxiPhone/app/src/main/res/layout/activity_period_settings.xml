@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorCardBackground"
+        app:titleTextColor="?attr/colorTextPrimary" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="?attr/colorCardBackground">
+
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/cbPerDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="按星期分别设置"
+            android:textSize="14sp"
+            android:textColor="?attr/colorTextPrimary" />
+
+        <Spinner
+            android:id="@+id/spinnerDay"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorDivider" />
+
+    <!-- 表头 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:background="?attr/colorCardBackground">
+
+        <TextView android:layout_width="50dp" android:layout_height="wrap_content"
+            android:text="节次" android:textSize="12sp" android:textColor="?attr/colorTextSecondary"
+            android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="开始时间" android:textSize="12sp"
+            android:textColor="?attr/colorTextSecondary" android:gravity="center" />
+        <TextView android:layout_width="30dp" android:layout_height="wrap_content"
+            android:text="~" android:textSize="12sp" android:textColor="?attr/colorTextSecondary"
+            android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="结束时间" android:textSize="12sp"
+            android:textColor="?attr/colorTextSecondary" android:gravity="center" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvPeriods"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnResetDefault"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="恢复默认"
+            style="?attr/materialButtonOutlinedStyle" />
+
+        <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存"
+            style="?attr/materialButtonStyle" />
+    </LinearLayout>
+</LinearLayout>

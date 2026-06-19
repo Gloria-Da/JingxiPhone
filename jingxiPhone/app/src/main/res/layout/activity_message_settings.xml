@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="?attr/colorBackground">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="消息与记忆设置"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorTextPrimary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- History Rounds -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="调用历史消息轮数 (0-200)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+                <SeekBar
+                    android:id="@+id/sbHistoryRounds"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="200" />
+                <EditText
+                    android:id="@+id/etHistoryRounds"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+
+            <!-- Memory Summary Rounds (V1 episodic auto-summary) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="情景记忆自动总结轮数 (0-200, 0=关闭)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+                <SeekBar
+                    android:id="@+id/sbSummaryRounds"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="200" />
+                <EditText
+                    android:id="@+id/etSummaryRounds"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="每N轮对话后自动回顾并生成情景记忆。设为0关闭。旧版功能，新版已由curator接管部分能力。"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Memory Call Count -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="每次调用AI携带的普通记忆条数 (0表示调用全部)"
+                android:textColor="?attr/colorTextPrimary" />
+            <EditText
+                android:id="@+id/etMemoryCallCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Memory 2.0 Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="记忆系统 2.0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorTextPrimary"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="启用新记忆系统"
+                    android:textColor="?attr/colorTextPrimary" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/swMemoryV2Enabled"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="运行模式"
+                android:textColor="?attr/colorTextPrimary"
+                android:layout_marginBottom="4dp" />
+            <RadioGroup
+                android:id="@+id/rgMemoryMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+                <RadioButton
+                    android:id="@+id/rbEconomy"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="经济模式"
+                    android:textColor="?attr/colorTextPrimary" />
+                <RadioButton
+                    android:id="@+id/rbImmersive"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="沉浸模式"
+                    android:textColor="?attr/colorTextPrimary" />
+            </RadioGroup>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="经济模式: 本地关键词匹配，快且省token | 沉浸模式: AI潜意识分析，主动联想更强(每次多1次API调用)"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Profile Curator Interval -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="画像curator间隔 (0-50轮, 0=关闭, 默认10)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+                <SeekBar
+                    android:id="@+id/sbProfileCuratorInterval"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="50" />
+                <EditText
+                    android:id="@+id/etProfileCuratorInterval"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="每N轮对话后AI回顾最近对话，发现对用户的新认识、验证已有画像。需要curator API配置。"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Unified Curator Interval -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="综合记忆整理间隔 (1-50轮, 默认5)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+                <SeekBar
+                    android:id="@+id/sbCuratorInterval"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="50" />
+                <EditText
+                    android:id="@+id/etCuratorInterval"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="综合记忆整理每 N 轮对话执行一次。默认 5 轮。"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Moment Chat History Rounds -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="动态互动聊天记录条数 (0-30, 0=关闭, 默认15)"
+                android:textColor="?attr/colorTextPrimary" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+                <SeekBar
+                    android:id="@+id/sbMomentHistoryRounds"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="30" />
+                <EditText
+                    android:id="@+id/etMomentHistoryRounds"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:textAlignment="center" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="角色评论动态时带上与发布者的最近N条聊天记录。0=不携带。"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Moment Interaction Mode -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="动态互动模式"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorTextPrimary"
+                android:layout_marginBottom="8dp" />
+            <RadioGroup
+                android:id="@+id/rgMomentInteractionMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="4dp">
+                <RadioButton
+                    android:id="@+id/rbIndividual"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="一对一 (默认) — 每个角色单独调用API，回复更个性化，但token消耗较大"
+                    android:textColor="?attr/colorTextPrimary" />
+                <RadioButton
+                    android:id="@+id/rbBatch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="合并模式 — 所有角色合并到一次API调用，节省token但个性化略弱"
+                    android:textColor="?attr/colorTextPrimary" />
+            </RadioGroup>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="注意事项：合并模式下图片只传一次，节省大量token；建议在角色较多时使用合并模式。"
+                android:textSize="11sp"
+                android:textColor="?attr/colorTextSecondary"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="保存设置" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

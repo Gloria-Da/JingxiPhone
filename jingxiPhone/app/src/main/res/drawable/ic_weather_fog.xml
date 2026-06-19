@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 雾气线条 1 -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M5,10 L19,10"
+        android:strokeColor="#B0BEC5"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"/>
+        
+    <!-- 雾气线条 2 -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M7,14 L17,14"
+        android:strokeColor="#B0BEC5"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"/>
+        
+    <!-- 雾气线条 3 -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M4,18 L20,18"
+        android:strokeColor="#B0BEC5"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"/>
+        
+    <!-- 模糊的半遮挡太阳 -->
+    <path
+        android:fillColor="#80FFB300"
+        android:pathData="M12,4A4,4 0 1,0 16,8 4,4 0 0,0 12,4Z"/>
+        
+</vector>

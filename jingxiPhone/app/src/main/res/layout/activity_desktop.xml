@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorPrimary">
+
+    <!-- 背景图片 -->
+    <ImageView
+        android:id="@+id/ivDesktopBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone"/>
+
+    <!-- 将 ScrollView 改为普通的 LinearLayout 或 RelativeLayout，取消上下滑动 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/layoutDock">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- 顶部信息区：时间、日期、天气等 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_glass_card"
+                android:padding="20dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="bottom">
+
+                    <TextView
+                        android:id="@+id/tvTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="14:25"
+                        android:textSize="56sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnPrimary"
+                        android:includeFontPadding="false"/>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
+
+                    <!-- 自定义签名区域 -->
+                    <LinearLayout
+                        android:id="@+id/layoutSignature"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_white_round"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:id="@+id/tvSignature"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="点这里写字"
+                            android:textSize="12sp"
+                            android:textColor="?attr/colorOnPrimary"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2026年5月11日 星期一"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:layout_marginTop="4dp"/>
+
+            </LinearLayout>
+
+            <!-- 错落的卡片区和App区 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
+
+                <!-- 左侧列 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
+
+        <!-- 照片卡片 -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="?attr/colorCardBackground"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:id="@+id/ivCustomPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_glass_card"
+                android:src="@drawable/bg_virtual_image" /> <!-- 默认图片 -->
+        </androidx.cardview.widget.CardView>
+
+                    <!-- 小App图标行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/ic_menu_gallery"
+                                    app:tint="?attr/colorOnPrimary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="游戏中心"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/ic_menu_search"
+                                    app:tint="?attr/colorOnPrimary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="浏览器"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 天气卡片 -->
+                    <LinearLayout
+                        android:id="@+id/cardWeather"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:background="@drawable/bg_glass_card"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Weather"
+                                android:textSize="14sp"
+                                android:textColor="?attr/colorOnPrimary"/>
+                            <TextView
+                                android:id="@+id/tvWeatherDesc"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="多云"
+                                android:textSize="14sp"
+                                android:textColor="?attr/colorOnPrimary"/>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:gravity="bottom|end">
+                            <TextView
+                                android:id="@+id/tvWeatherTemp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="26°C"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnPrimary"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- 右侧列 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+
+                    <!-- 应用网格 -->
+                    <GridLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:columnCount="2"
+                        android:rowCount="3"
+                        android:layout_marginBottom="16dp">
+
+                        <!-- 聊天 -->
+                        <LinearLayout
+                            android:id="@+id/btnChat"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/sym_action_chat"
+                                    app:tint="?attr/colorSecondary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="聊天"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <!-- 世界书 -->
+                        <LinearLayout
+                            android:id="@+id/btnWorldbook"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/ic_menu_agenda"
+                                    app:tint="?attr/colorOnPrimary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="世界书"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <!-- 日历/日程 -->
+                        <LinearLayout
+                            android:id="@+id/btnSchedule"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/ic_menu_my_calendar"
+                                    app:tint="?attr/colorOnPrimary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="日历"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <!-- 记忆 -->
+                        <LinearLayout
+                            android:id="@+id/btnMemory"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:layout_marginBottom="16dp">
+
+                            <FrameLayout
+                                android:layout_width="60dp"
+                                android:layout_height="60dp"
+                                android:background="@drawable/bg_glass_card"
+                                android:padding="12dp">
+                                <ImageView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:src="@android:drawable/ic_menu_recent_history"
+                                    app:tint="?attr/colorOnPrimary"/>
+                            </FrameLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="记忆"
+                                android:textSize="12sp"
+                                android:textColor="?attr/colorOnPrimary"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                    </GridLayout>
+
+                    <!-- 右下角大卡片 -->
+                    <androidx.cardview.widget.CardView
+                        android:id="@+id/cardPhoto2"
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="0dp"
+                        app:cardBackgroundColor="?attr/colorCardBackground">
+
+                        <ImageView
+                            android:id="@+id/ivCustomPhoto2"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/bg_glass_card"
+                            android:src="@drawable/bg_virtual_image" />
+                    </androidx.cardview.widget.CardView>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- 底部 Dock 栏 -->
+    <LinearLayout
+        android:id="@+id/layoutDock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_glass_dock"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_horizontal">
+
+        <!-- 电话 -->
+        <FrameLayout
+            android:id="@+id/btnCall"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_white_round"
+            android:backgroundTint="?attr/colorCardBackground"
+            android:layout_marginEnd="24dp"
+            android:padding="16dp">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@android:drawable/ic_menu_call"
+                app:tint="?attr/colorSecondary"/>
+        </FrameLayout>
+
+        <!-- 设置 -->
+        <FrameLayout
+            android:id="@+id/btnSettings"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_white_round"
+            android:backgroundTint="?attr/colorCardBackground"
+            android:layout_marginEnd="24dp"
+            android:padding="16dp">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@android:drawable/ic_menu_preferences"
+                app:tint="?attr/colorOnPrimary"/>
+        </FrameLayout>
+
+        <!-- 外观主题 (新加入) -->
+        <FrameLayout
+            android:id="@+id/btnTheme"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_white_round"
+            android:backgroundTint="?attr/colorCardBackground"
+            android:padding="16dp">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@android:drawable/ic_menu_gallery"
+                app:tint="?attr/colorOnPrimary"/>
+        </FrameLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

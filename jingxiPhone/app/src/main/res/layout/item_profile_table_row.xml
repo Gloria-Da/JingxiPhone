@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp"
+    android:minHeight="44dp"
+    android:background="?android:selectableItemBackground">
+
+    <TextView
+        android:id="@+id/tvKeyLabel"
+        android:layout_width="90dp"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#5C6BC0"
+        android:textStyle="bold"
+        android:gravity="end"
+        android:paddingEnd="12dp" />
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:background="#E0E0E0"
+        android:layout_marginEnd="12dp" />
+
+    <TextView
+        android:id="@+id/tvValue"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#37474F"
+        android:lineSpacingExtra="2dp" />
+
+    <TextView
+        android:id="@+id/tvEmotion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textColor="#90A4AE"
+        android:layout_marginStart="8dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvPersonaTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textColor="#FFFFFF"
+        android:background="#9FA8DA"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="1dp"
+        android:layout_marginStart="6dp"
+        android:visibility="gone" />
+
+</LinearLayout>

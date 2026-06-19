@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_import_image"
+        android:title="📷 识图导入"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_add_course"
+        android:title="添加课程"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_manage_semesters"
+        android:title="管理学期"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_ai_privacy"
+        android:title="🔒 AI 数据感知"
+        app:showAsAction="never" />
+</menu>

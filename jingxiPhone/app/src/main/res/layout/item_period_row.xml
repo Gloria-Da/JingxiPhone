@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="4dp"
+    android:background="?attr/colorBackground">
+
+    <TextView
+        android:id="@+id/tvPeriod"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="?attr/colorTextPrimary"
+        android:gravity="center" />
+
+    <EditText
+        android:id="@+id/etStart"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginEnd="4dp"
+        android:textSize="14sp"
+        android:textColor="?attr/colorTextPrimary"
+        android:inputType="text"
+        android:hint="08:00"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="?attr/colorCardBackground" />
+
+    <TextView
+        android:layout_width="30dp"
+        android:layout_height="wrap_content"
+        android:text="~"
+        android:textSize="14sp"
+        android:textColor="?attr/colorTextSecondary"
+        android:gravity="center" />
+
+    <EditText
+        android:id="@+id/etEnd"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="4dp"
+        android:textSize="14sp"
+        android:textColor="?attr/colorTextPrimary"
+        android:inputType="text"
+        android:hint="08:45"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="?attr/colorCardBackground" />
+
+</LinearLayout>

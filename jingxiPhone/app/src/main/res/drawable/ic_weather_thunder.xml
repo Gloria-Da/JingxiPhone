@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- 带有雷电光晕的云朵背光 -->
+    <path
+        android:fillColor="#33FFEB3B"
+        android:pathData="M17.5,16H6.5A4.5,4.5 0 0,1 6.5,7a4.5,4.5 0 0,1 1.25,0.18 5.5,5.5 0 0,1 10.43,2.44A3.5,3.5 0 0,1 17.5,16Z"/>
+        
+    <!-- 乌云 -->
+    <path
+        android:fillColor="#90A4AE"
+        android:pathData="M17.5,16H6.5A4.5,4.5 0 0,1 6.5,7a4.5,4.5 0 0,1 1.25,0.18 5.5,5.5 0 0,1 10.43,2.44A3.5,3.5 0 0,1 17.5,16Z"/>
+        
+    <!-- 乌云高光 -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M17.5,15H6.5A3.5,3.5 0 0,1 6.5,8a3.5,3.5 0 0,1 0.77,0.09 4.5,4.5 0 0,1 8.57,2.05A2.5,2.5 0 0,1 17.5,15Z"/>
+        
+    <!-- 闪电 -->
+    <path
+        android:fillColor="#FFEB3B"
+        android:pathData="M13,15 L10,20 L11.5,20 L10,24 L15,18 L13.5,18 L15,15 Z"/>
+        
+</vector>

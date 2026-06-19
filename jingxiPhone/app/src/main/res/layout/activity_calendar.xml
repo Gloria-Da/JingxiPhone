@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorCardBackground"
+            app:titleTextColor="?attr/colorTextPrimary"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+        <!-- Tab 栏: 月历 | 课程表 -->
+        <LinearLayout
+            android:id="@+id/tabBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?attr/colorCardBackground"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:id="@+id/tabCalendar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:paddingVertical="10dp"
+                android:text="月历"
+                android:textSize="15sp"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tabCourse"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:paddingVertical="10dp"
+                android:text="课程表"
+                android:textSize="15sp"
+                android:textColor="?attr/colorTextSecondary" />
+
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorDivider" />
+
+        <!-- 月历内容 -->
+        <FrameLayout
+            android:id="@+id/calendarContent"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <!-- 筛选切换 -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="6dp"
+                    android:background="?attr/colorCardBackground"
+                    app:selectionRequired="true"
+                    app:singleSelection="true"
+                    app:checkedChip="@id/chipAll">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipAll"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="全部" android:textSize="13sp" android:checked="true" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCycle"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="经期" android:textSize="13sp" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipEvents"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="日程" android:textSize="13sp" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="?attr/colorDivider" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/calendarCard"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp" android:layout_marginTop="8dp"
+                    app:cardCornerRadius="12dp" app:cardElevation="2dp"
+                    app:cardBackgroundColor="?attr/colorCardBackground" android:elevation="2dp">
+
+                    <LinearLayout android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:orientation="vertical" android:padding="8dp">
+
+                        <LinearLayout android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:orientation="horizontal"
+                            android:gravity="center_vertical" android:paddingHorizontal="4dp" android:paddingVertical="2dp">
+                            <TextView android:id="@+id/btnPrevMonth" android:layout_width="44dp"
+                                android:layout_height="44dp" android:gravity="center" android:text="‹"
+                                android:textSize="32sp" android:textColor="?attr/colorTextSecondary"
+                                android:background="?android:attr/selectableItemBackgroundBorderless" />
+                            <TextView android:id="@+id/tvMonthTitle" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center"
+                                android:textSize="18sp" android:textColor="?attr/colorTextPrimary" android:textStyle="bold" />
+                            <TextView android:id="@+id/btnNextMonth" android:layout_width="44dp"
+                                android:layout_height="44dp" android:gravity="center" android:text="›"
+                                android:textSize="32sp" android:textColor="?attr/colorTextSecondary"
+                                android:background="?android:attr/selectableItemBackgroundBorderless" />
+                        </LinearLayout>
+
+                        <LinearLayout android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:orientation="horizontal"
+                            android:paddingVertical="4dp" android:paddingHorizontal="4dp">
+                            <TextView style="@style/CalendarWeekHeader" android:text="日"
+                                android:textColor="@color/calendar_sunday_text" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="一" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="二" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="三" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="四" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="五" />
+                            <TextView style="@style/CalendarWeekHeader" android:text="六"
+                                android:textColor="@color/calendar_saturday_text" />
+                        </LinearLayout>
+
+                        <androidx.viewpager2.widget.ViewPager2
+                            android:id="@+id/monthViewPager"
+                            android:layout_width="match_parent" android:layout_height="270dp"
+                            android:background="?attr/colorBackground" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <View android:layout_width="match_parent" android:layout_height="8dp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent" android:layout_height="0dp"
+                    android:layout_weight="1" android:layout_marginHorizontal="8dp" android:layout_marginBottom="8dp"
+                    app:cardCornerRadius="12dp" app:cardElevation="1dp"
+                    app:cardBackgroundColor="?attr/colorCardBackground" android:elevation="1dp">
+
+                    <LinearLayout android:layout_width="match_parent"
+                        android:layout_height="match_parent" android:orientation="vertical">
+                        <LinearLayout android:id="@+id/selectedDateHeader"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:orientation="horizontal" android:gravity="center_vertical"
+                            android:paddingHorizontal="16dp" android:paddingVertical="10dp" android:visibility="gone">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:text="📅" android:textSize="16sp" android:layout_marginEnd="8dp" />
+                            <TextView android:id="@+id/tvSelectedDate" android:layout_width="0dp"
+                                android:layout_height="wrap_content" android:layout_weight="1"
+                                android:textSize="14sp" android:textColor="?attr/colorTextPrimary" android:textStyle="bold" />
+                        </LinearLayout>
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvDayDetail" android:layout_width="match_parent"
+                            android:layout_height="0dp" android:layout_weight="1"
+                            android:clipToPadding="false" android:paddingBottom="16dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- 课程表内容 -->
+        <FrameLayout
+            android:id="@+id/courseContent"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone">
+
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="match_parent" android:orientation="vertical">
+
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="horizontal"
+                    android:gravity="center_vertical" android:padding="8dp"
+                    android:background="?attr/colorCardBackground">
+
+                    <Spinner android:id="@+id/spinnerSemester"
+                        android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/btnManageSemesters"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="管理"
+                        android:textSize="12sp"
+                        android:textColor="#FFFFFF"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="6dp"
+                        android:background="@drawable/bg_btn_manage"
+                        android:layout_marginEnd="4dp" />
+
+                    <TextView android:id="@+id/btnPrevWeek" android:layout_width="40dp"
+                        android:layout_height="40dp" android:gravity="center" android:text="‹"
+                        android:textSize="28sp" android:textColor="?attr/colorTextSecondary"
+                        android:background="?android:attr/selectableItemBackgroundBorderless" />
+
+                    <TextView android:id="@+id/tvWeekInfo" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="14sp"
+                        android:textColor="?attr/colorTextPrimary" android:paddingHorizontal="8dp"
+                        android:gravity="center" />
+
+                    <TextView android:id="@+id/btnNextWeek" android:layout_width="40dp"
+                        android:layout_height="40dp" android:gravity="center" android:text="›"
+                        android:textSize="28sp" android:textColor="?attr/colorTextSecondary"
+                        android:background="?android:attr/selectableItemBackgroundBorderless" />
+                </LinearLayout>
+
+                <ScrollView android:layout_width="match_parent"
+                    android:layout_height="0dp" android:layout_weight="1" android:fillViewport="false">
+                    <GridLayout android:id="@+id/tableContainer"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:columnCount="8" />
+                </ScrollView>
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom" android:layout_margin="16dp"
+        app:fabCustomSize="48dp" app:maxImageSize="24dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="?attr/colorPrimary" app:tint="?attr/colorOnPrimary"
+        android:contentDescription="添加" />
+</FrameLayout>

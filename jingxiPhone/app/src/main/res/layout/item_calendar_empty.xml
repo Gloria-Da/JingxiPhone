@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="12dp"
+    android:gravity="center_vertical"
+    android:background="?attr/colorCardBackground"
+    android:layout_marginBottom="0.5dp">
+
+    <View
+        android:id="@+id/colorTag"
+        android:layout_width="4dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="12dp"
+        android:background="#DDDDDD" />
+
+    <TextView
+        android:id="@+id/tvEventTime"
+        android:layout_width="56dp"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="?attr/colorTextSecondary"
+        android:gravity="center_vertical" />
+
+    <TextView
+        android:id="@+id/tvEventTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="15sp"
+        android:textColor="?attr/colorTextPrimary" />
+
+    <TextView
+        android:id="@+id/tvEventNotes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/ivRecurrence"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:visibility="gone" />
+
+</LinearLayout>

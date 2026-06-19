@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 心声弹窗 —— 思想泡泡风格 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_inner_voice_popup"
+    android:padding="16dp"
+    android:elevation="8dp">
+
+    <!-- 标题行：💭 + 情绪标签 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:id="@+id/tvInnerVoiceTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="💭 心声"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvInnerVoiceEmotion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="纠结"
+            android:textColor="#FF5252"
+            android:textSize="12sp"
+            android:background="@drawable/bg_emotion_tag"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- 内容区：左侧竖线 + 斜体文本 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- 左侧装饰竖线 -->
+        <View
+            android:layout_width="3dp"
+            android:layout_height="match_parent"
+            android:background="#FF5252"
+            android:alpha="0.4" />
+
+        <TextView
+            android:id="@+id/tvInnerVoiceContent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="心声内容在这里显示..."
+            android:textColor="?attr/colorTextSecondary"
+            android:textSize="15sp"
+            android:textStyle="italic"
+            android:lineSpacingExtra="4dp" />
+    </LinearLayout>
+
+    <!-- 底部提示 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="点击空白处关闭"
+        android:textColor="?attr/colorTextSecondary"
+        android:textSize="11sp"
+        android:alpha="0.5"
+        android:gravity="end" />
+</LinearLayout>

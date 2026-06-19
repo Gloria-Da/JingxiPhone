@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Custom theme attributes for dark mode support -->
+    <attr name="colorTextPrimary" format="color|reference"/>
+    <attr name="colorTextSecondary" format="color|reference"/>
+    <attr name="colorDivider" format="color|reference"/>
+
+    <!-- 基础主题色 -->
+    <attr name="colorCardBackground" format="color|reference"/>
+    <attr name="colorBackground" format="color|reference"/>
+    <attr name="colorPinnedBackground" format="color|reference"/>
+    <attr name="colorSurfaceVariant" format="color|reference"/>
+
+    <!-- 聊天气泡背景色 -->
+    <attr name="colorBubbleLeft" format="color|reference"/>
+    <attr name="colorBubbleRight" format="color|reference"/>
+</resources>

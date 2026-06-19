@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 记忆类型标签色 (Memory type badges) -->
+    <color name="memory_type_core">#FF9800</color>
+    <color name="memory_type_concern">#E91E63</color>
+    <color name="memory_type_profile">#9C27B0</color>
+    <color name="memory_type_diary">#2196F3</color>
+    <color name="memory_type_normal">#4CAF50</color>
+
+    <!-- 情景心绪情绪色 (Episode emotion colors) -->
+    <color name="emotion_happy">#C5B880</color>
+    <color name="emotion_sad">#90A4C0</color>
+    <color name="emotion_nervous">#C5A890</color>
+    <color name="emotion_calm">#A0B0B8</color>
+    <color name="emotion_excited">#C59098</color>
+    <color name="emotion_angry">#C59898</color>
+    <color name="emotion_warm">#C5A898</color>
+    <color name="emotion_awkward">#B0B0B0</color>
+    <color name="emotion_heartache">#C5A0A8</color>
+    <color name="emotion_moved">#C5B080</color>
+    <color name="emotion_angry_intense">#C57070</color>
+    <color name="emotion_worried">#A0A8C5</color>
+    <color name="emotion_warmth">#C5A878</color>
+    <color name="emotion_guilty">#B0A0C0</color>
+    <color name="emotion_curious">#90B8A8</color>
+    <color name="emotion_bar_default">#B0BEC5</color>
+
+    <!-- 备忘录状态色 (Memo status colors) -->
+    <color name="memo_status_completed">#4CAF50</color>
+    <color name="memo_status_record">#9E9E9E</color>
+    <color name="memo_status_pending">#FF9800</color>
+
+    <!-- 画像表格色 (Profile table colors) -->
+    <color name="profile_category_text">#7E57C2</color>
+    <color name="profile_category_bg">#EDE7F6</color>
+    <color name="profile_key_label">#5C6BC0</color>
+    <color name="profile_value_text">#37474F</color>
+    <color name="profile_emotion_tag">#8D6E63</color>
+    <color name="profile_confidence_text">#90A4AE</color>
+    <color name="profile_empty_placeholder">#BDBDBD</color>
+    <color name="profile_card_bg">#FAF8FC</color>
+
+    <!-- UI 辅助色 -->
+    <color name="memory_section_header_text">#333333</color>
+    <color name="memory_section_header_bg">#EEEEEE</color>
+    <color name="memory_card_bg">#FAFAFA</color>
+    <color name="memory_text_title">#455A64</color>
+    <color name="memory_text_subtitle">#78909C</color>
+    <color name="memory_text_body">#546E7A</color>
+    <color name="memory_text_timestamp">#B0BEC5</color>
+    <color name="memory_text_tone">#90A4AE</color>
+    <color name="memory_divider">#E0E0E0</color>
+</resources>

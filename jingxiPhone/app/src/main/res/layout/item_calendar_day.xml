@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="42dp"
+    android:background="?attr/colorBackground">
+
+    <!-- 底部分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="bottom"
+        android:background="@color/calendar_grid_divider" />
+
+    <!-- 背景层：经期（实际记录） -->
+    <View
+        android:id="@+id/periodBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:background="@drawable/bg_calendar_period"
+        android:visibility="gone" />
+
+    <!-- 背景层：预测经期 -->
+    <View
+        android:id="@+id/predictedBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:background="@drawable/bg_calendar_predicted"
+        android:visibility="gone" />
+
+    <!-- 背景层：排卵期 -->
+    <View
+        android:id="@+id/ovulationBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:background="@drawable/bg_calendar_ovulation"
+        android:visibility="gone" />
+
+    <!-- 背景层：节假日 -->
+    <View
+        android:id="@+id/holidayBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="1dp"
+        android:background="@drawable/bg_calendar_holiday"
+        android:visibility="gone" />
+
+    <!-- 选中/今天圆环 -->
+    <View
+        android:id="@+id/dayBackground"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_gravity="center"
+        android:background="@android:color/transparent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingTop="1dp">
+
+        <TextView
+            android:id="@+id/tvDayNumber"
+            android:layout_width="34dp"
+            android:layout_height="26dp"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textColor="?attr/colorTextPrimary" />
+
+        <TextView
+            android:id="@+id/tvHolidayName"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:gravity="center"
+            android:textSize="9sp"
+            android:textColor="@color/calendar_holiday_text"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/dotRow"
+            android:layout_width="wrap_content"
+            android:layout_height="4dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <View
+                android:id="@+id/dotPeriod"
+                android:layout_width="4dp"
+                android:layout_height="4dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/dot_cycle_period"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/dotOvulation"
+                android:layout_width="4dp"
+                android:layout_height="4dp"
+                android:layout_marginEnd="2dp"
+                android:background="@drawable/dot_cycle_ovulation"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/dotEvent"
+                android:layout_width="4dp"
+                android:layout_height="4dp"
+                android:background="@drawable/dot_calendar_event"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
