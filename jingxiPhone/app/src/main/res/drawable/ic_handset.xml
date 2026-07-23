@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <!-- 扬声器主体 -->
+    <path
+        android:pathData="M3,9v6h4l5,5V4L7,9H3z"
+        android:fillColor="#FFFFFF"/>
+    <!-- 听筒声波（一道小弧线，表示贴近耳朵） -->
+    <path
+        android:pathData="M14,7c0,0 2,1.5 2,5s-2,5-2,5"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"/>
+</vector>

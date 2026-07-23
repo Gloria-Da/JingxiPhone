@@ -31,6 +31,7 @@ public class AiReplyService extends Service {
     public static final String EXTRA_SESSION_ID = "session_id";
     public static final String EXTRA_CHARACTER_ID = "character_id";
     public static final String EXTRA_AUTO_REASON = "auto_reason";
+    public static final String EXTRA_SHARED_CONTENT_ID = "shared_content_id";
     public static final String EXTRA_NOTIFICATION_TEXT = "notification_text";
 
     private static final String TAG = "AiReplyService";
@@ -106,26 +107,47 @@ public class AiReplyService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && ACTION_START_REPLY.equals(intent.getAction())) {
-            int sessionId = intent.getIntExtra(EXTRA_SESSION_ID, -1);
-            int characterId = intent.getIntExtra(EXTRA_CHARACTER_ID, -1);
-
-            if (sessionId != -1 && characterId != -1) {
-                // 获取 WakeLock，防止休眠
-                acquireWakeLock();
-                // 将服务置于前台，防止系统杀掉网络请求
-                startForeground(NOTIFICATION_ID, createNotification("AI 正在思考回复..."));
-                String autoReason = intent.getStringExtra(EXTRA_AUTO_REASON);
-                requestAiReply(sessionId, characterId, autoReason);
-            }
+        // ★ 无条件调用 startForeground() — 对齐 ImageGenForegroundService/CallForegroundService 模式
+        // 防止任何条件分支提前返回时触发 ForegroundServiceDidNotStartInTimeException
+        try {
+            startForeground(NOTIFICATION_ID, createNotification("AI 正在思考回复..."));
+        } catch (Exception e) {
+            android.util.Log.e(TAG, "startForeground failed", e);
         }
+
+        if (intent == null || !ACTION_START_REPLY.equals(intent.getAction())) {
+            return START_NOT_STICKY;
+        }
+
+        int sessionId = intent.getIntExtra(EXTRA_SESSION_ID, -1);
+        int characterId = intent.getIntExtra(EXTRA_CHARACTER_ID, -1);
+
+        if (sessionId == -1 || characterId == -1) {
+            android.util.Log.w(TAG, "Invalid sessionId=" + sessionId + " or characterId=" + characterId + ", ignoring.");
+            return START_NOT_STICKY;
+        }
+
+        // 防重复：同一 session 30 秒内忽略重复请求
+        long lastRequestTime = com.yoyo.jingxi.utils.SpUtils.getLong("LAST_REPLY_REQ_TIME_" + sessionId, 0L);
+        if (System.currentTimeMillis() - lastRequestTime < 30_000L) {
+            android.util.Log.w(TAG, "Duplicate AiReply request for session " + sessionId + ", ignoring.");
+            return START_NOT_STICKY;
+        }
+        com.yoyo.jingxi.utils.SpUtils.putLong("LAST_REPLY_REQ_TIME_" + sessionId, System.currentTimeMillis());
+
+        // 获取 WakeLock，防止休眠
+        acquireWakeLock();
+        String autoReason = intent.getStringExtra(EXTRA_AUTO_REASON);
+        int sharedContentId = intent.getIntExtra(EXTRA_SHARED_CONTENT_ID, 0);
+        requestAiReply(sessionId, characterId, autoReason, sharedContentId);
+
         return START_NOT_STICKY; // 不自动重启，除非有新请求
     }
 
-    private void requestAiReply(int sessionId, int characterId, String autoReason) {
+    private void requestAiReply(int sessionId, int characterId, String autoReason, int sharedContentId) {
         executorService.execute(() -> {
             try {
-                com.yoyo.jingxi.utils.AiReplyHelper.requestAiReplySynchronous(this, sessionId, characterId, autoReason);
+                com.yoyo.jingxi.utils.AiReplyHelper.requestAiReplySynchronous(this, sessionId, characterId, autoReason, sharedContentId);
 
                 // Memory review using service executor (protected by WakeLock)
                 com.yoyo.jingxi.data.entity.Character c = db.characterDao().getCharacterById(characterId);

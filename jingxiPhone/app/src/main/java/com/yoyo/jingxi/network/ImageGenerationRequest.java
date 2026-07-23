@@ -4,7 +4,7 @@ public class ImageGenerationRequest {
     public String model;
     public String prompt;
     public int n = 1;
-    public String size = "1024x1024";
+    public String size = "1024x1792";
 
     public ImageGenerationRequest(String model, String prompt) {
         this.model = model;

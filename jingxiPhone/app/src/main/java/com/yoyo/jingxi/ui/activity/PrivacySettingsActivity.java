@@ -46,6 +46,9 @@ public class PrivacySettingsActivity extends AppCompatActivity {
     private SwitchMaterial switchPeriod;
     private TextView tvPeriodChars, tvPeriodPersona;
 
+    // Write permissions
+    private SwitchMaterial switchWriteCalendar, switchWritePeriod;
+
     private List<String> allPersonaNames = new ArrayList<>();
     private List<Character> allCharacters = new ArrayList<>();
 
@@ -118,6 +121,19 @@ public class PrivacySettingsActivity extends AppCompatActivity {
         btnCoursePersona.setOnClickListener(v -> showPersonaPicker("course"));
         btnPeriodPersona.setOnClickListener(v -> showPersonaPicker("period"));
 
+        // Write permission toggles
+        switchWriteCalendar = findViewById(R.id.switchWriteCalendar);
+        switchWritePeriod = findViewById(R.id.switchWritePeriod);
+
+        switchWriteCalendar.setOnCheckedChangeListener((btn, checked) -> {
+            settings.setWriteEnabled("calendar", checked);
+            settings.save();
+        });
+        switchWritePeriod.setOnCheckedChangeListener((btn, checked) -> {
+            settings.setWriteEnabled("period", checked);
+            settings.save();
+        });
+
         // Apply semester-style button backgrounds
         for (View btn : new View[]{btnCalendarChars, btnCalendarPersona,
                 btnCourseChars, btnCoursePersona,
@@ -169,6 +185,10 @@ public class PrivacySettingsActivity extends AppCompatActivity {
         switchPeriod.setChecked(periodCfg.enabled);
         tvPeriodChars.setText(formatCharacterNames(periodCfg.characterIds));
         tvPeriodPersona.setText(formatPersonaName(periodCfg.persona));
+
+        // Write permissions
+        switchWriteCalendar.setChecked(settings.getConfig("calendar").writeEnabled);
+        switchWritePeriod.setChecked(settings.getConfig("period").writeEnabled);
     }
 
     private String formatCharacterNames(List<Integer> ids) {

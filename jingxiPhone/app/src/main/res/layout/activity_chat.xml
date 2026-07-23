@@ -42,6 +42,28 @@
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
 
+    <!-- 多选模式Toolbar（初始隐藏） -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbarMultiSelect"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Light"
+        android:visibility="gone"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="?attr/colorTextPrimary">
+
+        <TextView
+            android:id="@+id/tvSelectedCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="已选择 0 条"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="16sp" />
+    </androidx.appcompat.widget.Toolbar>
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -101,6 +123,7 @@
 
     <!-- 输入区域 -->
     <LinearLayout
+        android:id="@+id/layoutInputArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorCardBackground"
@@ -114,7 +137,7 @@
             android:layout_height="32dp"
             android:layout_marginEnd="8dp"
             android:padding="2dp"
-            android:src="@android:drawable/ic_btn_speak_now"
+            android:src="@drawable/ic_mic"
             app:tint="?attr/colorTextPrimary"
             android:contentDescription="切换输入" />
 
@@ -123,7 +146,8 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginEnd="8dp"
-            android:src="@android:drawable/ic_menu_myplaces"
+            android:src="@drawable/ic_emoji"
+            app:tint="?attr/colorTextPrimary"
             android:contentDescription="表情" />
 
         <EditText
@@ -166,6 +190,64 @@
             android:src="@android:drawable/ic_input_add"
             app:tint="?attr/colorTextPrimary"
             android:contentDescription="更多" />
+    </LinearLayout>
+
+    <!-- 多选模式底部操作栏（初始隐藏） -->
+    <LinearLayout
+        android:id="@+id/layoutMultiSelectActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorCardBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btnMultiForwardSingle"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="@string/forward_single"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="13sp"
+            android:background="@drawable/bg_white_round" />
+
+        <Button
+            android:id="@+id/btnMultiForwardMerge"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/forward_merge"
+            android:textColor="?attr/colorTextPrimary"
+            android:textSize="13sp"
+            android:background="@drawable/bg_white_round" />
+
+        <Button
+            android:id="@+id/btnMultiDelete"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="@string/delete"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="13sp"
+            android:background="@drawable/bg_white_round" />
+
+        <Button
+            android:id="@+id/btnMultiCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/cancel"
+            android:textColor="?attr/colorTextSecondary"
+            android:textSize="13sp"
+            android:background="@drawable/bg_white_round" />
     </LinearLayout>
 
     <!-- Recording Overlay -->

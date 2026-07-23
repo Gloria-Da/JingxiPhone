@@ -111,6 +111,10 @@ git clone https://github.com/Gaoshufen/jingxiPhone.git
 
 本项目采用 [MIT License](./LICENSE) 开源。
 
+### 第三方参考
+
+- **PhotoStack** ([github.com/Wren036/PhotoStack](https://github.com/Wren036/PhotoStack)) — 聊天界面多图堆叠翻页组件的交互设计参考
+
 Copyright © 2024 **Xia youye**
 
 ---

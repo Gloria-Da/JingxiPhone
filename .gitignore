@@ -27,4 +27,7 @@ app/build/
 .idea/
 .vscode/
 
+# Release APK output directory (not part of source)
+app/release/
+
 # Ignore temp directories

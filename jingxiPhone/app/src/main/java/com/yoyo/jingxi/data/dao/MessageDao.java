@@ -32,6 +32,13 @@ public interface MessageDao {
     @Query("SELECT * FROM messages WHERE sessionId = :sessionId ORDER BY timestamp DESC LIMIT :limit")
     List<Message> getRecentMessagesBySessionIdSync(int sessionId, int limit);
 
+    /** 绕过 identity map 直接更新多图消息的 type 和 imageUrl */
+    @Query("UPDATE messages SET type = :type, imageUrl = :imageUrl WHERE id = :id")
+    void updateMultiImageFields(int id, int type, String imageUrl);
+
+    @Query("DELETE FROM messages WHERE id = :id")
+    void deleteById(int id);
+
     @Query("SELECT * FROM messages WHERE id = :id")
     Message getMessageByIdSync(int id);
 

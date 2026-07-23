@@ -81,6 +81,30 @@
         <activity
             android:name=".ui.activity.ImageDetailActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+        <!-- 外部分享入口：接收从其他App分享的链接 -->
+        <activity
+            android:name=".ui.activity.SendToAgentActivity"
+            android:exported="true"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.JingxiPhone">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- 内置浏览器：查看分享链接的内容 -->
+        <activity
+            android:name=".ui.activity.SharedContentBrowserActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+        <!-- 转发目标选择 -->
+        <activity
+            android:name=".ui.activity.ForwardTargetActivity"
+            android:theme="@style/Theme.JingxiPhone" />
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:screenOrientation="portrait"

@@ -55,9 +55,9 @@ public class WorldbookAdapter extends RecyclerView.Adapter<WorldbookAdapter.View
         WorldbookEntry entry = entries.get(position);
 
         String typeStr = "[未知]";
-        if (entry.type == 0) typeStr = "[前]";
-        else if (entry.type == 1) typeStr = "[中]";
-        else if (entry.type == 2) typeStr = "[后]";
+        if (entry.type == 0) typeStr = "[世界观]";
+        else if (entry.type == 1) typeStr = "[触发]";
+        else if (entry.type == 2) typeStr = "[规则约束]";
 
         holder.tvType.setText(typeStr);
         holder.tvTitle.setText(entry.title != null ? entry.title : "未命名");

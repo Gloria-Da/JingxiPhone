@@ -9,8 +9,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.textfield.TextInputLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -26,7 +27,7 @@ public class WorldbookEditActivity extends AppCompatActivity {
     private EditText etTitle;
     private EditText etKeyword;
     private EditText etContent;
-    private TextView tvKeywordLabel;
+    private TextInputLayout tilKeyword;
 
     private WorldbookEntry currentEntry;
     private AppDatabase db;
@@ -48,10 +49,10 @@ public class WorldbookEditActivity extends AppCompatActivity {
         etTitle = findViewById(R.id.etTitle);
         etKeyword = findViewById(R.id.etKeyword);
         etContent = findViewById(R.id.etContent);
-        tvKeywordLabel = findViewById(R.id.tvKeywordLabel);
+        tilKeyword = findViewById(R.id.tilKeyword);
         Button btnSave = findViewById(R.id.btnSave);
 
-        String[] types = {"前", "中", "后"};
+        String[] types = {"世界观设定", "触发设定", "回复规则约束"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, types);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerType.setAdapter(adapter);
@@ -59,12 +60,10 @@ public class WorldbookEditActivity extends AppCompatActivity {
         spinnerType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position == 1) { // 中世界书
-                    tvKeywordLabel.setVisibility(View.VISIBLE);
-                    etKeyword.setVisibility(View.VISIBLE);
+                if (position == 1) {
+                    tilKeyword.setVisibility(View.VISIBLE);
                 } else {
-                    tvKeywordLabel.setVisibility(View.GONE);
-                    etKeyword.setVisibility(View.GONE);
+                    tilKeyword.setVisibility(View.GONE);
                     etKeyword.setText("");
                 }
             }
@@ -101,7 +100,7 @@ public class WorldbookEditActivity extends AppCompatActivity {
         }
 
         if (type == 1 && TextUtils.isEmpty(keyword)) {
-            Toast.makeText(this, "中世界书必须填写触发关键词", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "触发设定必须填写触发关键词", Toast.LENGTH_SHORT).show();
             return;
         }
 

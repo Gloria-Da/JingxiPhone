@@ -15,13 +15,12 @@ public class CycleRecord {
 
     public String startDate;     // 经期开始日期 "yyyy-MM-dd"
     public String endDate;       // 经期结束日期 "yyyy-MM-dd"
-    public int flowLevel;        // 经血量: 1=少, 2=中, 3=多
+    public Integer flowLevel;       // 经血量: null=未指定, 1=少, 2=中, 3=多
     public String symptoms;      // 症状标签, 逗号分隔 如 "cramps,headache,fatigue"
     public String notes;         // 备注
     public long createdAt;
 
     public CycleRecord() {
-        this.flowLevel = 2;
         this.createdAt = System.currentTimeMillis();
     }
 }

@@ -88,9 +88,10 @@ public class CallIncomingNotificationHelper {
                 .setContentText(content)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setAutoCancel(true)
                 .setOngoing(true)
                 .setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+                .setContentIntent(acceptPendingIntent)
+                .setFullScreenIntent(acceptPendingIntent, true)
                 .addAction(android.R.drawable.ic_menu_call, "接听", acceptPendingIntent)
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "拒绝", rejectPendingIntent)
                 .build();

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chat image display sizes -->
+    <dimen name="chat_image_width">200dp</dimen>
+    <dimen name="chat_image_max_height">300dp</dimen>
+    <dimen name="chat_virtual_image_size">200dp</dimen>
+</resources>

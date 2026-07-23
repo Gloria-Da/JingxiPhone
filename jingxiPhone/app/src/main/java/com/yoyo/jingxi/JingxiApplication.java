@@ -64,7 +64,8 @@ public class JingxiApplication extends Application {
             @Override
             public void onActivityPostCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
                 if (!(activity instanceof com.yoyo.jingxi.ui.activity.DesktopActivity) &&
-                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity)) {
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity) &&
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.CallActivity)) {
                     ThemeManager.applyGlobalBackground(activity);
                 }
             }
@@ -79,7 +80,8 @@ public class JingxiApplication extends Application {
             @Override
             public void onActivityResumed(@NonNull Activity activity) {
                 if (!(activity instanceof com.yoyo.jingxi.ui.activity.DesktopActivity) &&
-                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity)) {
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.ChatActivity) &&
+                    !(activity instanceof com.yoyo.jingxi.ui.activity.CallActivity)) {
                     ThemeManager.applyGlobalBackground(activity);
                 }
 
@@ -89,9 +91,8 @@ public class JingxiApplication extends Application {
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                             android.service.notification.StatusBarNotification[] activeNotifications = notificationManager.getActiveNotifications();
                             for (android.service.notification.StatusBarNotification notification : activeNotifications) {
-                                // Keep AiReplyService notification (1001), CallForegroundService notification (1002), etc.
-                                // We cancel everything else (new message notifications, moment notifications, etc.)
-                                if (notification.getId() != 1001 && notification.getId() != 1002 && notification.getId() != 1003) {
+                                // Keep AiReplyService notification (1001), CallForegroundService notification (1002), ImageGenService (1003), Call incoming (2001)
+                                if (notification.getId() != 1001 && notification.getId() != 1002 && notification.getId() != 1003 && notification.getId() != 2001) {
                                     notificationManager.cancel(notification.getId());
                                 }
                             }

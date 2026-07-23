@@ -129,15 +129,18 @@ public class ImageGenerationManager {
             return;
         }
         
-        boolean hasVirtualImages = false;
-        if (message.imageDesc != null && message.imageDesc.contains("virtual://")) {
-            hasVirtualImages = true;
-        }
+        // 经过前面的 early-return 检查后，到达此处的消息一定有待生成的虚拟图片
+        boolean hasVirtualImages = true;
 
-        String prompt = message.imageDesc;
+        // 剥离可能的 virtual:// 前缀（重试流程可能引入），然后提取 prompt
+        String rawDesc = message.imageDesc;
+        if (rawDesc != null && rawDesc.startsWith("virtual://")) {
+            rawDesc = rawDesc.substring("virtual://".length());
+        }
+        String prompt = rawDesc;
         try {
             // 尝试解析 JSON 格式的描述
-            JSONObject json = new JSONObject(message.imageDesc);
+            JSONObject json = new JSONObject(rawDesc);
             if (json.has("desc")) {
                 prompt = json.getString("desc");
             }
@@ -212,7 +215,7 @@ public class ImageGenerationManager {
         }
         String requestUrl = endpoint + "v1/images/generations";
         
-        String size = "1024x1024";
+        String size = "1024x1792";
         try {
             JSONObject json = new JSONObject(originalDesc);
             if (json.has("size")) {
@@ -220,6 +223,12 @@ public class ImageGenerationManager {
             }
         } catch (Exception e) {
             // Not JSON or size not found
+        }
+
+        // 校验尺寸是否为DALL-E 3支持的三种尺寸之一
+        if (!size.equals("1024x1024") && !size.equals("1024x1792") && !size.equals("1792x1024")) {
+            android.util.Log.w(TAG, "Invalid size '" + size + "', defaulting to 1024x1792");
+            size = "1024x1792";
         }
 
         // 兜底检查：desc 不应包含人物描写
@@ -285,7 +294,11 @@ public class ImageGenerationManager {
         if (message != null) {
             message.imageDesc = "error://" + originalDesc;
             db.messageDao().update(message);
-            // 这里可以发送广播通知更新UI，如果需要的话
+            // 发送广播通知UI更新，使ImageDetailActivity能显示重试按钮
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                Intent broadcastIntent = new Intent("com.yoyo.jingxi.ACTION_MESSAGE_UPDATED");
+                context.sendBroadcast(broadcastIntent);
+            });
         }
     }
 
@@ -376,7 +389,7 @@ public class ImageGenerationManager {
         }
         String requestUrl = endpoint + "v1/images/generations";
 
-        String size = "1024x1024";
+        String size = "1024x1792";
         try {
             // originalUrl is like "virtual://{"desc":"...","size":"..."}"
             String jsonStr = originalUrl;
@@ -389,6 +402,12 @@ public class ImageGenerationManager {
             }
         } catch (Exception e) {
             // Not JSON or size not found
+        }
+
+        // 校验尺寸是否为DALL-E 3支持的三种尺寸之一
+        if (!size.equals("1024x1024") && !size.equals("1024x1792") && !size.equals("1792x1024")) {
+            android.util.Log.w(TAG, "Invalid size '" + size + "', defaulting to 1024x1792");
+            size = "1024x1792";
         }
 
         ImageGenerationRequest request = new ImageGenerationRequest(model, prompt, size);

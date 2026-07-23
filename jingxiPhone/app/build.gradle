@@ -10,8 +10,8 @@ android {
         applicationId "com.yoyo.jingxi"
         minSdk 24
         targetSdk 34
-        versionCode 4
-        versionName "2.1"
+        versionCode 5
+        versionName "2.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,9 @@ dependencies {
     // Retrofit & Gson
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    // Jsoup for HTML parsing (link metadata extraction)
+    implementation 'org.jsoup:jsoup:1.17.2'
     
     // ViewModel & LiveData
     implementation 'androidx.lifecycle:lifecycle-viewmodel:2.6.2'

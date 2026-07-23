@@ -71,11 +71,15 @@ import com.yoyo.jingxi.data.dao.SemesterConfigDao;
 import com.yoyo.jingxi.data.entity.SemesterConfig;
 import com.yoyo.jingxi.data.dao.CourseEntryDao;
 import com.yoyo.jingxi.data.entity.CourseEntry;
+import com.yoyo.jingxi.data.dao.SharedContentDao;
+import com.yoyo.jingxi.data.entity.SharedContent;
+import com.yoyo.jingxi.data.dao.ForwardRecordDao;
+import com.yoyo.jingxi.data.entity.ForwardRecord;
 
-@Database(entities = {Character.class, Message.class, MyPersona.class, ChatSession.class, Memory.class, WorldbookEntry.class, Memo.class, ScheduleEntry.class, EmojiEntry.class, CallRecord.class, CallMessage.class, RelationshipNode.class, RelationshipEdge.class, Moment.class, MomentComment.class, MomentLike.class, MomentNotification.class, UserProfileNode.class, EpisodicMemory.class, InnerVoice.class, CalendarEvent.class, CycleRecord.class, HolidayCache.class, SemesterConfig.class, CourseEntry.class}, version = 49, exportSchema = false)
+@Database(entities = {Character.class, Message.class, MyPersona.class, ChatSession.class, Memory.class, WorldbookEntry.class, Memo.class, ScheduleEntry.class, EmojiEntry.class, CallRecord.class, CallMessage.class, RelationshipNode.class, RelationshipEdge.class, Moment.class, MomentComment.class, MomentLike.class, MomentNotification.class, UserProfileNode.class, EpisodicMemory.class, InnerVoice.class, CalendarEvent.class, CycleRecord.class, HolidayCache.class, SemesterConfig.class, CourseEntry.class, SharedContent.class, ForwardRecord.class}, version = 53, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     /** Current database version. Must match the version in @Database annotation. */
-    public static final int DB_VERSION = 49;
+    public static final int DB_VERSION = 53;
     /** Minimum database version that has a valid Room migration path. */
     public static final int MIN_DB_VERSION = 3;
 
@@ -107,6 +111,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract HolidayCacheDao holidayCacheDao();
     public abstract SemesterConfigDao semesterConfigDao();
     public abstract CourseEntryDao courseEntryDao();
+    public abstract SharedContentDao sharedContentDao();
+    public abstract ForwardRecordDao forwardRecordDao();
 
     static final Migration MIGRATION_3_4 = new Migration(3, 4) {
         @Override
@@ -724,13 +730,76 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    // 49→50: cycle_records.flowLevel 改为可空（INTEGER NOT NULL DEFAULT 2 → INTEGER）
+    static final Migration MIGRATION_49_50 = new Migration(49, 50) {
+        @Override public void migrate(SupportSQLiteDatabase db) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `cycle_records_new` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`startDate` TEXT, " +
+                "`endDate` TEXT, " +
+                "`flowLevel` INTEGER, " +
+                "`symptoms` TEXT, " +
+                "`notes` TEXT, " +
+                "`createdAt` INTEGER NOT NULL)");
+            db.execSQL("INSERT INTO `cycle_records_new` (`id`,`startDate`,`endDate`,`flowLevel`,`symptoms`,`notes`,`createdAt`) " +
+                "SELECT `id`,`startDate`,`endDate`,`flowLevel`,`symptoms`,`notes`,`createdAt` FROM `cycle_records`");
+            db.execSQL("DROP TABLE `cycle_records`");
+            db.execSQL("ALTER TABLE `cycle_records_new` RENAME TO `cycle_records`");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `idx_cycle_records_start` ON `cycle_records` (`startDate`)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS `idx_cycle_records_end` ON `cycle_records` (`endDate`)");
+        }
+    };
+
+    // 50→52: 新增分享内容表和转发记录表（跳过51，因51 migration 有外键缺失bug）
+    static final Migration MIGRATION_50_52 = new Migration(50, 52) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `shared_contents` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`sourceUrl` TEXT, " +
+                "`siteName` TEXT, " +
+                "`faviconUrl` TEXT, " +
+                "`contentTitle` TEXT, " +
+                "`thumbnailUrl` TEXT, " +
+                "`description` TEXT, " +
+                "`timestamp` INTEGER NOT NULL, " +
+                "`sessionId` INTEGER NOT NULL DEFAULT 0, " +
+                "`characterId` INTEGER NOT NULL DEFAULT 0, " +
+                "`messageId` INTEGER NOT NULL DEFAULT 0)");
+
+            // 转发记录表：含外键约束，引用 messages 表
+            database.execSQL("CREATE TABLE IF NOT EXISTS `forward_records` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`sourceMessageId` INTEGER NOT NULL, " +
+                "`targetSessionId` INTEGER NOT NULL, " +
+                "`targetCharacterId` INTEGER NOT NULL, " +
+                "`forwardTimestamp` INTEGER NOT NULL, " +
+                "`forwardedMessageId` INTEGER NOT NULL, " +
+                "`forwardBatchId` TEXT, " +
+                "FOREIGN KEY (`sourceMessageId`) REFERENCES `messages`(`id`) ON DELETE CASCADE)");
+
+            // 索引名必须与 Room 自动生成的名称一致：index_<table>_<column>
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_forward_records_sourceMessageId` "
+                + "ON `forward_records` (`sourceMessageId`)");
+        }
+    };
+
+    // 52→53: shared_contents 新增 imageUrlsJson 和 fullText 字段（小红书图文支持）
+    static final Migration MIGRATION_52_53 = new Migration(52, 53) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `shared_contents` ADD COLUMN `imageUrlsJson` TEXT");
+            database.execSQL("ALTER TABLE `shared_contents` ADD COLUMN `fullText` TEXT");
+        }
+    };
+
     public static AppDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, "jingxi_database")
-                            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49)
+                            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49, MIGRATION_49_50, MIGRATION_50_52, MIGRATION_52_53)
                             .build();
                     // 启动后台迁移：将旧的 Base64 图片数据迁移为文件存储，避免 CursorWindow 溢出
                     final Context appContext = context.getApplicationContext();

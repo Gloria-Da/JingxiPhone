@@ -20,6 +20,7 @@ import com.yoyo.jingxi.utils.MomentNotificationManager;
 import com.yoyo.jingxi.utils.MomentSimulator;
 import com.yoyo.jingxi.utils.SpUtils;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -83,6 +84,15 @@ public class AutoMomentWorker extends Worker {
             long lastMomentTime = SpUtils.getLong("LAST_AUTO_MOMENT_TIME_" + character.id, 0L);
             if (currentTime - lastMomentTime < intervalMillis) {
                 Log.d(TAG, "Too soon for another auto moment for character " + character.id + ". Needs " + (intervalMillis/1000/60) + " mins, passed " + ((currentTime - lastMomentTime)/1000/60) + " mins.");
+                continue;
+            }
+
+            // 检查上次AI拒绝时间，冷却期内跳过（避免每15分钟重复询问浪费token）
+            long lastRefusalTime = SpUtils.getLong("AUTO_MOMENT_LAST_REFUSAL_TIME_" + character.id, 0L);
+            if (lastRefusalTime > 0 && (currentTime - lastRefusalTime) < intervalMillis) {
+                Log.d(TAG, "Character " + character.id + " is in cooldown after AI refusal. "
+                    + (currentTime - lastRefusalTime) / 1000 / 60 + " mins since refusal, needs "
+                    + intervalMillis / 1000 / 60 + " mins. Skipping.");
                 continue;
             }
 
@@ -214,13 +224,23 @@ public class AutoMomentWorker extends Worker {
                     .append("2. 描述中的时间（白天/夜晚）、季节（春夏秋冬）、天气（晴雨雪）\n")
                     .append("   必须与当前实际一致。\n")
                     .append("3. 描述要具体详细：光线、颜色、构图、材质、氛围。\n")
-                    .append("4. 多张图片用英文逗号分隔。不配图就填空字符串。\n\n")
+                    .append("4. 多张图片以 JSON 数组形式输出（见下方格式说明）。不配图填空数组 []。\n")
+                    .append("5. 【截图/内容分享】：如果是分享手机屏幕上的数字内容（聊天截图、App界面、网页等），\n")
+                    .append("   desc应直接描述\"xxx界面的截图\"，而非\"一台手机上显示着xxx\"。\n")
+                    .append("6. 【随手拍风格】：日常分享的照片应像真实手机随手拍，\n")
+                    .append("   轻微不完美构图、自然光线、不加滤镜的真实感。\n")
+                    .append("7. 【尺寸选择】：每张图片必须指定 size 字段，从以下三种中选择最合适的：\n")
+                    .append("   · \"1024x1792\"（竖版）— 大多数日常随手拍、近景、竖屏截图、物品特写、食物、花草\n")
+                    .append("   · \"1792x1024\"（横版）— 开阔风景、街景全景、横屏截图、桌面布置\n")
+                    .append("   · \"1024x1024\"（正方形）— 仅对称构图、居中主体\n")
+                    .append("   你必须根据画面内容主动选择最合适的比例，禁止所有图片都使用同一种尺寸。\n")
+                    .append("   例如：全景风景→横版，食物/物品特写→竖版，对称构图→正方形。\n\n")
                     .append("你必须严格返回以下 JSON 格式：\n")
                     .append("{\n")
                     .append("  \"should_send\": true/false,\n")
                     .append("  \"reason\": \"你决定发或不发的心理活动/原因\",\n")
                     .append("  \"content\": \"你发布的朋友圈内容(如果should_send为false则留空)\",\n")
-                    .append("  \"image_desc\": \"图片描述，多张图片用逗号分隔。没有图片请填空字符串\"\n")
+                    .append("  \"image_desc\": \"JSON数组字符串，每项含desc和size。例如：[{\\\"desc\\\":\\\"夕阳下的海边\\\",\\\"size\\\":\\\"1792x1024\\\"},{\\\"desc\\\":\\\"一杯咖啡特写\\\",\\\"size\\\":\\\"1024x1792\\\"}]。不配图填空数组[]\"\n")
                     .append("}\n");
 
             request.messages.add(new OpenAiRequest.Message("user", systemPrompt.toString()));
@@ -243,6 +263,9 @@ public class AutoMomentWorker extends Worker {
                     String imageDesc = json.optString("image_desc", "");
 
                     if (shouldSend && !momentContent.isEmpty()) {
+                        // 设置冷却时间（避免 Worker 重试时重复询问）
+                        SpUtils.putLong("AUTO_MOMENT_LAST_REFUSAL_TIME_" + character.id, currentTime);
+                        SpUtils.putString("AUTO_MOMENT_LAST_REFUSAL_REASON_" + character.id, "");
                         SpUtils.putLong("LAST_AUTO_MOMENT_TIME_" + character.id, currentTime); // 只有真发了才更新时间
 
                         Moment aiMoment = new Moment();
@@ -253,16 +276,33 @@ public class AutoMomentWorker extends Worker {
 
                         if (imageDesc != null && !imageDesc.trim().isEmpty()) {
                             StringBuilder urls = new StringBuilder();
-                            String[] descs = imageDesc.split(",");
-                            for (String desc : descs) {
-                                desc = desc.trim();
-                                if (!desc.isEmpty()) {
-                                    if (urls.length() > 0) urls.append(",");
-                                    // 处理可能的转义字符问题
-                                    String safeDesc = desc.replace("\"", "\\\"").replace("\n", " ").replace("\\", "\\\\");
-                                    urls.append("virtual://{\"desc\":\"").append(safeDesc).append("\"}");
+                            String trimmedDesc = imageDesc.trim();
+
+                            // 尝试解析为 JSON 数组（新格式）：[{"desc":"...","size":"..."},...]
+                            if (trimmedDesc.startsWith("[")) {
+                                try {
+                                    org.json.JSONArray arr = new org.json.JSONArray(trimmedDesc);
+                                    for (int i = 0; i < arr.length(); i++) {
+                                        org.json.JSONObject item = arr.getJSONObject(i);
+                                        String d = item.optString("desc", "");
+                                        String s = item.optString("size", "1024x1792");
+                                        if (!d.isEmpty()) {
+                                            if (urls.length() > 0) urls.append(",");
+                                            String safeDesc = d.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
+                                            urls.append("virtual://{\"desc\":\"").append(safeDesc)
+                                                .append("\",\"size\":\"").append(s).append("\"}");
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    // JSON 数组解析失败，回退到旧逗号分隔格式
+                                    Log.w(TAG, "Failed to parse image_desc as JSON array, falling back to legacy format: " + e.getMessage());
+                                    parseImageDescLegacy(imageDesc, urls);
                                 }
+                            } else {
+                                // 旧格式：逗号分隔纯文本
+                                parseImageDescLegacy(imageDesc, urls);
                             }
+
                             if (urls.length() > 0) {
                                 aiMoment.imageUrl = urls.toString();
                             }
@@ -292,8 +332,11 @@ public class AutoMomentWorker extends Worker {
 
                         Log.d(TAG, "Successfully generated AI moment via worker: " + momentContent);
                     } else {
-                        Log.d(TAG, "AI decided NOT to send moment. Reason: " + json.optString("reason", ""));
-                        // 这里可以考虑将时间往后延，比如半小时后再问一次，而不是等待一个完整的interval，或者什么都不做等15分钟Worker再次执行
+                        String refusalReason = json.optString("reason", "");
+                        Log.d(TAG, "AI decided NOT to send moment. Reason: " + refusalReason);
+                        // 记录拒绝时间，冷却期内不再询问（避免每15分钟重复消耗token）
+                        SpUtils.putLong("AUTO_MOMENT_LAST_REFUSAL_TIME_" + character.id, currentTime);
+                        SpUtils.putString("AUTO_MOMENT_LAST_REFUSAL_REASON_" + character.id, refusalReason);
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing AI moment JSON", e);
@@ -328,6 +371,21 @@ public class AutoMomentWorker extends Worker {
         } catch (Exception e) {
             e.printStackTrace();
             return true; // 解析失败默认放行
+        }
+    }
+
+    /**
+     * 旧格式兼容：逗号分隔的纯文本图片描述，解析为 virtual:// URL（不含size，后续由ImageGenerationManager使用默认值）
+     */
+    private void parseImageDescLegacy(String imageDesc, StringBuilder urls) {
+        String[] descs = imageDesc.split(",");
+        for (String desc : descs) {
+            desc = desc.trim();
+            if (!desc.isEmpty()) {
+                if (urls.length() > 0) urls.append(",");
+                String safeDesc = desc.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ");
+                urls.append("virtual://{\"desc\":\"").append(safeDesc).append("\"}");
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -45,6 +46,7 @@ import com.yoyo.jingxi.network.SttManager;
 import com.yoyo.jingxi.network.SttProvider;
 import com.yoyo.jingxi.service.CallForegroundService;
 import com.yoyo.jingxi.utils.SpUtils;
+import com.yoyo.jingxi.utils.VoiceGenerateHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +70,7 @@ public class CallActivity extends AppCompatActivity {
 
     private AppDatabase db;
     private OpenAIManager aiManager;
+    private VoiceGenerateHelper voiceGenerateHelper;
     private Handler mainHandler = new Handler(Looper.getMainLooper());
     private java.util.concurrent.ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
     
@@ -102,6 +105,16 @@ public class CallActivity extends AppCompatActivity {
     private android.media.MediaPlayer mediaPlayer;
     private android.media.AudioManager audioManager;
     private boolean hasAudioFocus = false;
+
+    // 免提/扬声器切换
+    private LinearLayout btnSpeaker;
+    private ImageView ivSpeakerIcon;
+    private TextView tvSpeakerText;
+    private boolean isSpeakerEnabled = false;  // false=听筒(handset), true=免提(speaker)
+
+    // 接近传感器熄屏（脸靠近自动黑屏，远离自动亮屏）
+    private PowerManager.WakeLock proximityWakeLock;
+    private PowerManager powerManager;
 
     public static CallActivity instance;
 
@@ -157,6 +170,8 @@ public class CallActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        // 进入后台时释放接近传感器锁（悬浮窗模式下屏幕应正常显示）
+        releaseProximityWakeLock();
         if (!isCallEnded) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
                 // 如果没有悬浮窗权限，使用 moveTaskToBack 或者让 Service 至少启动保证前台通知
@@ -191,6 +206,12 @@ public class CallActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         hideFloatingWindow();
+        // 通话界面使用深色滤镜背景，不受主题色影响
+        com.yoyo.jingxi.utils.ThemeManager.applyCallBackground(this);
+        // 从悬浮窗返回后，如果在听筒模式，重新获取接近传感器锁
+        if (isCallConnected && !isSpeakerEnabled) {
+            acquireProximityWakeLock();
+        }
     }
 
     @Override
@@ -379,18 +400,26 @@ public class CallActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         instance = this;
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         setContentView(R.layout.activity_call);
-        
+
+        // 通话界面强制黑色状态栏
+        getWindow().setStatusBarColor(android.graphics.Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    getWindow().getDecorView().getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
+
         checkOverlayPermission();
 
         sessionId = getIntent().getIntExtra("session_id", -1);
         isIncoming = getIntent().getBooleanExtra("is_incoming", false);
         initialMessage = getIntent().getStringExtra("initial_message");
 
-        initViews();
-
         db = AppDatabase.getDatabase(this);
         aiManager = new OpenAIManager();
+
+        initViews();
 
         loadData();
 
@@ -409,6 +438,13 @@ public class CallActivity extends AppCompatActivity {
         
         rvCallSubtitles = findViewById(R.id.rvCallSubtitles);
         subtitleAdapter = new CallMessageAdapter();
+        voiceGenerateHelper = new VoiceGenerateHelper(this, db, dbExecutor, mainHandler);
+        subtitleAdapter.setVoiceGenerateHelper(voiceGenerateHelper);
+        subtitleAdapter.setDb(db);
+        subtitleAdapter.setDbExecutor(dbExecutor);
+        if (currentCharacter != null) {
+            subtitleAdapter.setCharacterId(currentCharacter.id);
+        }
         rvCallSubtitles.setLayoutManager(new LinearLayoutManager(this));
         rvCallSubtitles.setAdapter(subtitleAdapter);
         
@@ -419,6 +455,10 @@ public class CallActivity extends AppCompatActivity {
         tvHangUpText = findViewById(R.id.tvHangUpText);
         tvSpeakText = findViewById(R.id.tvSpeakText);
         ivSpeakIcon = findViewById(R.id.ivSpeakIcon);
+
+        btnSpeaker = findViewById(R.id.btnSpeaker);
+        ivSpeakerIcon = findViewById(R.id.ivSpeakerIcon);
+        tvSpeakerText = findViewById(R.id.tvSpeakerText);
         
         llKeyboardInput = findViewById(R.id.llKeyboardInput);
         etCallInput = findViewById(R.id.etCallInput);
@@ -454,6 +494,9 @@ public class CallActivity extends AppCompatActivity {
             }
         });
         
+        // 免提/听筒切换
+        btnSpeaker.setOnClickListener(v -> toggleSpeaker());
+
         // 录音按钮事件 (改为点击开启/关闭麦克风)
         btnSpeak.setOnClickListener(v -> {
             if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -487,6 +530,10 @@ public class CallActivity extends AppCompatActivity {
                 }
                 
                 mainHandler.post(() -> {
+                    if (currentCharacter != null) {
+                        subtitleAdapter.setCharacterName(currentCharacter.name);
+                        subtitleAdapter.setCharacterId(currentCharacter.id);
+                    }
                     updateUIForStatus();
                     // 当通过 onNewIntent 进入来电时，也需要开始响铃
                     // （onCreate 里已经做了这个检查，但 onNewIntent → loadData 不会触发）
@@ -561,6 +608,7 @@ public class CallActivity extends AppCompatActivity {
             tvCallDuration.setVisibility(View.GONE);
             btnAccept.setVisibility(View.GONE);
             btnSpeak.setVisibility(View.GONE);
+            btnSpeaker.setVisibility(View.GONE);
             llKeyboardInput.setVisibility(View.GONE);
             tvHangUpText.setText("关闭");
             return;
@@ -573,6 +621,7 @@ public class CallActivity extends AppCompatActivity {
             tvCallDuration.setVisibility(View.VISIBLE);
             btnAccept.setVisibility(View.GONE);
             btnSpeak.setVisibility(View.VISIBLE);
+            btnSpeaker.setVisibility(View.VISIBLE);
             llKeyboardInput.setVisibility(!isMicrophoneEnabled ? View.VISIBLE : View.GONE);
             tvHangUpText.setText("挂断");
             
@@ -581,8 +630,9 @@ public class CallActivity extends AppCompatActivity {
         } else {
             tvCallDuration.setVisibility(View.GONE);
             btnSpeak.setVisibility(View.GONE);
+            btnSpeaker.setVisibility(View.GONE);
             llKeyboardInput.setVisibility(View.GONE);
-            
+
             if (isIncoming) {
                 tvCallStatus.setText("等待接听...");
                 btnAccept.setVisibility(View.VISIBLE);
@@ -770,6 +820,17 @@ public class CallActivity extends AppCompatActivity {
 
         isCallConnected = true;
         callStartTime = System.currentTimeMillis();
+
+        // 设置音频模式为通话模式
+        if (audioManager != null) {
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        }
+
+        // 默认听筒模式，启动接近传感器熄屏
+        if (!isSpeakerEnabled) {
+            acquireProximityWakeLock();
+        }
+
         requestCallAudioFocus();
 
         dbExecutor.execute(() -> {
@@ -806,15 +867,22 @@ public class CallActivity extends AppCompatActivity {
         // 停止来电铃声和震动（通话已结束）
         com.yoyo.jingxi.utils.CallIncomingNotificationHelper.stopRinging(this);
         abandonCallAudioFocus();
+        releaseProximityWakeLock();
 
         voiceTaskQueue.clear();
         isProcessingVoice = false;
-        
+        isSpeakerEnabled = false;
+
         if (mediaPlayer != null) {
-            mediaPlayer.release();
+            android.media.MediaPlayer playerToRelease = mediaPlayer;
             mediaPlayer = null;
+            mainHandler.postDelayed(() -> {
+                try {
+                    playerToRelease.release();
+                } catch (Exception e) {}
+            }, 300);
         }
-        
+
         updateUIForStatus(finalStatus);
         
         if (currentCallRecordId != -1) {
@@ -844,12 +912,6 @@ public class CallActivity extends AppCompatActivity {
             });
         }
 
-        // 挂断后延迟关闭Activity，让用户看到短暂的"通话已结束"提示
-        mainHandler.postDelayed(() -> {
-            if (!isFinishing() && !isDestroyed()) {
-                finish();
-            }
-        }, 500);
     }
     
     private void requestCallAudioFocus() {
@@ -1015,13 +1077,68 @@ public class CallActivity extends AppCompatActivity {
     
     private void updateMicrophoneUI() {
         if (isMicrophoneEnabled && !isAiSpeakingOrThinking) {
+            ivSpeakIcon.setImageResource(R.drawable.ic_call_mic);
             tvSpeakText.setText("麦克风已开");
             ivSpeakIcon.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#34C759"))); // 绿色
             if (isCallConnected) llKeyboardInput.setVisibility(View.GONE);
         } else {
+            ivSpeakIcon.setImageResource(R.drawable.ic_call_mic_off);
             tvSpeakText.setText("麦克风已关");
             ivSpeakIcon.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#888888"))); // 灰色
             if (isCallConnected) llKeyboardInput.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void toggleSpeaker() {
+        if (audioManager == null) return;
+
+        isSpeakerEnabled = !isSpeakerEnabled;
+        audioManager.setSpeakerphoneOn(isSpeakerEnabled);
+
+        if (isSpeakerEnabled) {
+            // 免提模式
+            ivSpeakerIcon.setImageResource(R.drawable.ic_speaker);
+            ivSpeakerIcon.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#34C759"))); // 绿色
+            tvSpeakerText.setText("免提");
+            releaseProximityWakeLock();
+        } else {
+            // 听筒模式
+            ivSpeakerIcon.setImageResource(R.drawable.ic_handset);
+            ivSpeakerIcon.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#888888"))); // 灰色
+            tvSpeakerText.setText("听筒");
+            acquireProximityWakeLock();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void acquireProximityWakeLock() {
+        if (powerManager == null) return;
+        // 仅在通话已接通且听筒模式时启用
+        if (!isCallConnected || isSpeakerEnabled) return;
+        if (proximityWakeLock != null && proximityWakeLock.isHeld()) return;
+
+        try {
+            proximityWakeLock = powerManager.newWakeLock(
+                    PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+                    "Jingxi:ProximityWakeLock");
+            proximityWakeLock.acquire();
+        } catch (Exception e) {
+            android.util.Log.e("CallActivity", "Failed to acquire proximity wake lock", e);
+        }
+    }
+
+    private void releaseProximityWakeLock() {
+        if (proximityWakeLock != null) {
+            try {
+                if (proximityWakeLock.isHeld()) {
+                    proximityWakeLock.release();
+                }
+            } catch (Exception e) {
+                android.util.Log.e("CallActivity", "Failed to release proximity wake lock", e);
+            }
+            proximityWakeLock = null;
         }
     }
 
@@ -1404,38 +1521,12 @@ public class CallActivity extends AppCompatActivity {
         dbExecutor.execute(() -> {
             String voiceUrl = null;
             if (currentCharacter != null && !TextUtils.isEmpty(currentCharacter.voiceId)) {
-                String apiKey = SpUtils.getString("MINIMAX_API_KEY", "");
-                String model = SpUtils.getString("MINIMAX_MODEL", "speech-01-turbo");
-                
-                if (!TextUtils.isEmpty(apiKey)) {
-                    try {
-                        com.yoyo.jingxi.network.MiniMaxTtsRequest request = new com.yoyo.jingxi.network.MiniMaxTtsRequest(
-                                model, task.content, currentCharacter.voiceId,
-                                currentCharacter.voicePitch, currentCharacter.voiceIntensity, currentCharacter.voiceTimbre, currentCharacter.soundEffect,
-                                currentCharacter.voiceSpeed > 0 ? currentCharacter.voiceSpeed : com.yoyo.jingxi.utils.SpUtils.getFloat("voice_speed", 1.0f),
-                                task.emotion
-                        );
-                        Response<com.yoyo.jingxi.network.MiniMaxTtsResponse> ttsResponse = aiManager.getMiniMaxApi().textToAudio("Bearer " + apiKey, request).execute();
-                        if (ttsResponse.isSuccessful() && ttsResponse.body() != null && ttsResponse.body().data != null && !TextUtils.isEmpty(ttsResponse.body().data.audio)) {
-                            File audioFile = new File(getExternalCacheDir(), "call_voice_" + System.currentTimeMillis() + ".mp3");
-                            String hexAudio = ttsResponse.body().data.audio;
-                            byte[] audioBytes = new byte[hexAudio.length() / 2];
-                            for (int j = 0; j < audioBytes.length; j++) {
-                                int index = j * 2;
-                                int v = Integer.parseInt(hexAudio.substring(index, index + 2), 16);
-                                audioBytes[j] = (byte) v;
-                            }
-                            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(audioFile)) {
-                                fos.write(audioBytes);
-                                voiceUrl = audioFile.getAbsolutePath();
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+                android.util.Log.d("CallActivity", "processNextVoiceTask: calling generateVoiceSync, voiceId=" + currentCharacter.voiceId);
+                voiceUrl = voiceGenerateHelper.generateVoiceSync(currentCharacter, task.content, task.emotion);
+            } else {
+                android.util.Log.w("CallActivity", "processNextVoiceTask: skip TTS, currentCharacter=" + (currentCharacter != null ? "non-null" : "null") + " voiceId=" + (currentCharacter != null ? currentCharacter.voiceId : "N/A"));
             }
-            
+
             final String finalVoiceUrl = voiceUrl;
             
             mainHandler.post(() -> {
@@ -1475,7 +1566,11 @@ public class CallActivity extends AppCompatActivity {
                 mediaPlayer.release();
             }
             mediaPlayer = new android.media.MediaPlayer();
-            mediaPlayer.setAudioStreamType(AudioManager.STREAM_VOICE_CALL);
+            if (isSpeakerEnabled) {
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            } else {
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_VOICE_CALL);
+            }
             mediaPlayer.setDataSource(audioPath);
             mediaPlayer.prepare();
             mediaPlayer.setOnPreparedListener(mp -> {
@@ -1538,5 +1633,6 @@ public class CallActivity extends AppCompatActivity {
             mediaPlayer = null;
         }
         stopVadRecording(false);
+        releaseProximityWakeLock();
     }
 }

@@ -1,6 +1,8 @@
 package com.yoyo.jingxi.ui.activity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -11,7 +13,9 @@ import com.yoyo.jingxi.R;
 import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.CallRecord;
 import com.yoyo.jingxi.ui.adapter.CallMessageAdapter;
+import com.yoyo.jingxi.utils.VoiceGenerateHelper;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class CallHistoryDetailActivity extends AppCompatActivity {
@@ -19,6 +23,8 @@ public class CallHistoryDetailActivity extends AppCompatActivity {
     private int callRecordId;
     private AppDatabase db;
     private CallMessageAdapter adapter;
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private ExecutorService dbExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,18 +48,24 @@ public class CallHistoryDetailActivity extends AppCompatActivity {
 
         RecyclerView rvCallMessages = findViewById(R.id.rvCallMessages);
         rvCallMessages.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CallMessageAdapter();
-        rvCallMessages.setAdapter(adapter);
 
         db = AppDatabase.getDatabase(this);
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        adapter = new CallMessageAdapter();
+        VoiceGenerateHelper vgh = new VoiceGenerateHelper(this, db, dbExecutor, mainHandler);
+        adapter.setVoiceGenerateHelper(vgh);
+        adapter.setDb(db);
+        adapter.setDbExecutor(dbExecutor);
+        rvCallMessages.setAdapter(adapter);
+
+        dbExecutor.execute(() -> {
             CallRecord record = db.callRecordDao().getRecordByIdSync(callRecordId);
             if (record != null) {
                 com.yoyo.jingxi.data.entity.Character character = db.characterDao().getCharacterById(record.characterId);
                 if (character != null) {
                     runOnUiThread(() -> {
                         adapter.setCharacterName(character.name);
+                        adapter.setCharacterId(character.id);
                         long mins = record.duration / 60;
                         long secs = record.duration % 60;
                         if (getSupportActionBar() != null) {

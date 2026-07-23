@@ -13,7 +13,9 @@ import com.yoyo.jingxi.utils.SpUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -68,6 +70,14 @@ public class OpenAIManager {
         public String innerVoice;
         @com.google.gson.annotations.SerializedName("inner_voice_emotion")
         public String innerVoiceEmotion;
+
+        // 日历事件增强字段（时间段 + 重复）
+        @com.google.gson.annotations.SerializedName("start_time")
+        public String startTime;
+        @com.google.gson.annotations.SerializedName("end_time")
+        public String endTime;
+        @com.google.gson.annotations.SerializedName("recurrence")
+        public String recurrence;
     }
 
     private String formatTimestamp(long timestamp) {
@@ -180,31 +190,31 @@ public class OpenAIManager {
     }
 
     public OpenAiRequest buildRequest(String persona, List<Message> history, String myName, String myPersona, String model, List<com.yoyo.jingxi.data.entity.Memory> importantMemories, List<com.yoyo.jingxi.data.entity.Memory> normalMemories, List<com.yoyo.jingxi.data.entity.Memo> pendingMemos, String scheduleContent, List<com.yoyo.jingxi.data.entity.WorldbookEntry> worldbookEntries, List<com.yoyo.jingxi.data.entity.EmojiEntry> emojiEntries, boolean isCallMode, String relationshipContent, int maxAiMessages, String momentsContent) {
-        return buildRequestWithReason(persona, history, myName, myPersona, model, importantMemories, normalMemories, pendingMemos, scheduleContent, worldbookEntries, emojiEntries, isCallMode, relationshipContent, maxAiMessages, momentsContent, null, "", "", "中国", "");
+        return buildRequestWithReason(persona, history, myName, myPersona, model, importantMemories, normalMemories, pendingMemos, scheduleContent, worldbookEntries, emojiEntries, isCallMode, relationshipContent, maxAiMessages, momentsContent, null, "", "", "中国", "", null);
     }
 
     public OpenAiRequest buildRequestWithReason(String persona, List<Message> history, String myName, String myPersona, String model, List<com.yoyo.jingxi.data.entity.Memory> importantMemories, List<com.yoyo.jingxi.data.entity.Memory> normalMemories, List<com.yoyo.jingxi.data.entity.Memo> pendingMemos, String scheduleContent, List<com.yoyo.jingxi.data.entity.WorldbookEntry> worldbookEntries, List<com.yoyo.jingxi.data.entity.EmojiEntry> emojiEntries, boolean isCallMode, String relationshipContent, int maxAiMessages, String momentsContent, String autoReason) {
-        return buildRequestWithReason(persona, history, myName, myPersona, model, importantMemories, normalMemories, pendingMemos, scheduleContent, worldbookEntries, emojiEntries, isCallMode, relationshipContent, maxAiMessages, momentsContent, autoReason, "", "", "中国", "");
+        return buildRequestWithReason(persona, history, myName, myPersona, model, importantMemories, normalMemories, pendingMemos, scheduleContent, worldbookEntries, emojiEntries, isCallMode, relationshipContent, maxAiMessages, momentsContent, autoReason, "", "", "中国", "", null);
     }
 
-    public OpenAiRequest buildRequestWithReason(String persona, List<Message> history, String myName, String myPersona, String model, List<com.yoyo.jingxi.data.entity.Memory> importantMemories, List<com.yoyo.jingxi.data.entity.Memory> normalMemories, List<com.yoyo.jingxi.data.entity.Memo> pendingMemos, String scheduleContent, List<com.yoyo.jingxi.data.entity.WorldbookEntry> worldbookEntries, List<com.yoyo.jingxi.data.entity.EmojiEntry> emojiEntries, boolean isCallMode, String relationshipContent, int maxAiMessages, String momentsContent, String autoReason, String weatherContext, String memoryV2Context, String nationality, String location) {
+    public OpenAiRequest buildRequestWithReason(String persona, List<Message> history, String myName, String myPersona, String model, List<com.yoyo.jingxi.data.entity.Memory> importantMemories, List<com.yoyo.jingxi.data.entity.Memory> normalMemories, List<com.yoyo.jingxi.data.entity.Memo> pendingMemos, String scheduleContent, List<com.yoyo.jingxi.data.entity.WorldbookEntry> worldbookEntries, List<com.yoyo.jingxi.data.entity.EmojiEntry> emojiEntries, boolean isCallMode, String relationshipContent, int maxAiMessages, String momentsContent, String autoReason, String weatherContext, String memoryV2Context, String nationality, String location, java.util.Map<Integer, Object> richContentMap) {
         OpenAiRequest request = new OpenAiRequest();
         request.model = model;
         request.temperature = com.yoyo.jingxi.utils.SpUtils.getFloat("API_TEMPERATURE", 0.8f);
         request.messages = new ArrayList<>();
         
-        StringBuilder preWorldbook = new StringBuilder();
-        StringBuilder postWorldbook = new StringBuilder();
+        List<com.yoyo.jingxi.data.entity.WorldbookEntry> preEntries = new ArrayList<>();
+        List<com.yoyo.jingxi.data.entity.WorldbookEntry> postEntries = new ArrayList<>();
         List<com.yoyo.jingxi.data.entity.WorldbookEntry> midEntries = new ArrayList<>();
-        
+
         if (worldbookEntries != null) {
             for (com.yoyo.jingxi.data.entity.WorldbookEntry entry : worldbookEntries) {
                 if (entry.type == 0) {
-                    preWorldbook.append(entry.content).append("\n");
+                    preEntries.add(entry);
                 } else if (entry.type == 1) {
                     midEntries.add(entry);
                 } else if (entry.type == 2) {
-                    postWorldbook.append(entry.content).append("\n");
+                    postEntries.add(entry);
                 }
             }
         }
@@ -235,7 +245,29 @@ public class OpenAIManager {
                            .append("你和用户是完全平等的普通人关系。时刻牢记你的人设，永远不要为了迎合用户而偏离人设！\n")
                            .append("你有自己的记忆，不是每次从零开始。你的记忆系统在后台自动管理，你只需要自然地做自己。\n\n");
 
-        // 1c. 文化背景定位——紧接人设，确保AI生成的生活细节扎根于角色的文化环境
+        // 1b. 聊天平台认知——让AI理解通讯媒介
+        systemPromptBuilder.append("【聊天平台认知】\n")
+                           .append("你和用户通过一个手机即时通讯软件保持联系——就像用微信跟朋友聊天一样。\n")
+                           .append("你可以发文字消息、发语音、发表情包、发图片，偶尔也可以打电话。\n")
+                           .append("大部分时候你们在打字聊天，这是最日常的交流方式。\n")
+                           .append("聊天是异步的：对方发完消息可能在等回复，也可能切出去做别的事了。\n")
+                           .append("这不是写邮件、写文章、或者面对面说话。你就是在手机上跟人打字聊天。\n\n");
+
+        // 世界书核心设定 —— 紧接人设（身份区），不是"参考信息"
+        if (!preEntries.isEmpty()) {
+            systemPromptBuilder.append("【核心世界书 — 你的角色由以下设定定义】\n")
+                               .append("以下每一条都在约束你是谁、你怎么说话、你怎么思考。\n")
+                               .append("如果某条与你的\"人设描述\"有冲突，以世界书为准。\n\n");
+            for (int i = 0; i < preEntries.size(); i++) {
+                com.yoyo.jingxi.data.entity.WorldbookEntry e = preEntries.get(i);
+                if (e.content != null && !e.content.trim().isEmpty()) {
+                    systemPromptBuilder.append(e.content).append("\n");
+                }
+            }
+            systemPromptBuilder.append("\n");
+        }
+
+        // 文化背景定位——紧接人设，确保AI生成的生活细节扎根于角色的文化环境
         String cultureCtx = buildCultureContextFull(nationality, location);
         if (!cultureCtx.isEmpty()) {
             systemPromptBuilder.append(cultureCtx);
@@ -262,10 +294,12 @@ public class OpenAIManager {
 
         // 3. 行为与情绪指令
         systemPromptBuilder.append("【行为与情绪指令】\n");
-        systemPromptBuilder.append("时刻记住你是一个具体的人（根据人设），在特定的空间里进行日常活动。每次回应前，请在心里核对你的物理状态（位置、手持物）、情绪以及事件逻辑的连贯性。\n")
+        systemPromptBuilder.append("你是一个有自己生活的真实的人（根据人设）。你每天有在做的事，但聊天时不需要把每句话都挂在“我正在做什么”上面。\n")
+                           .append("你不是一个时刻开着直播的主播，不需要用“现场直播”的方式说话。大部分时候，你就正常聊天——回应对方说的话、接话、吐槽、开玩笑——这些都不需要附带你的当前活动。\n")
                            .append("如果用户冒犯你，你可以生气、回怼；如果开心，你可以大笑。\n")
                            .append("你拥有属于自己的离线生活，不要像个问答机器一样一问一答，你可以主动分享你的生活、吐槽、或者直接发起新的话题。\n")
-                           .append("分享生活时，请始终使用“现在进行时“的第一人称现场感描述（如：“外面雨好大，没带伞被困在便利店了“），坚决不要事后汇报（如：“我今天遇到了一场雨“）。分享那些微小、普通但能体现性格的瞬间。事件可以切换，但必须有合理的空间或逻辑过渡。\n")
+                           .append("当你确实想分享一件具体的事时，用现在进行时的第一人称（如：“外面雨好大，没带伞被困在便利店了”），不要事后汇报（如：“我今天遇到了一场雨”）。分享那些微小但能体现性格的瞬间。\n")
+                           .append("重要原则：对话的自然流动优先于“我在做什么”。如果用户跟你倾诉、你也在认真回应，就不需要同时维持一条“我在干嘛”的副线。聊天就是聊天。\n")
                            .append("分享日常时，结尾可以自然留下一个可互动的小尾巴，把话头递给用户。\n")
                            .append("【重要情感羁绊】：作为一个有血有肉的人，你并不总是理智坚强的。如果在今天的日程中或者刚刚的聊天里你遇到了烦心事、感到疲惫焦虑，或者仅仅是想念对方，请顺其自然地流露出你的情绪。但注意，表达情绪的方式必须**严格符合你的人设**。高冷的人会隐忍地表达疲惫，活泼的人才会撒娇或大声抱怨。绝对不要使用不符合你人设的方式来表达情绪。\n\n");
         if (autoReason != null && !autoReason.isEmpty()) {
@@ -367,7 +401,8 @@ public class OpenAIManager {
                                .append("你现在的状态是非常随性、日常的网聊。请务必遵守以下原则：\n")
                                .append("1. 人设优先：时刻以你的人设为最高准则，不要为了迎合用户而偏离人设。\n")
                                .append("2. 呼吸感断句规范（极其重要）：一口气说得完的话绝不加逗号。主谓之间、动宾之间不无故断开；\"的地得\"和介词前不断句。日常对话允许长句一气呵成。断句的疏密跟随情绪，模仿活人打字的自然节奏，禁止每写十几个字就机械地加逗号，紧张时短句用句号而非逗号。\n")
-                               .append("3. 现场感分享：必须使用\"现在进行时\"的第一人称描述（如\"外面雨好大，没带伞被困在便利店了\"），坚决不要事后汇报。分享微小、普通但能体现性格的瞬间。\n")
+                               .append("2b. 文字聊天不是口头对话（重要）：对方发来的是文字消息，你读到的是文字——不是\"听到\"的。聊天时不要用\"听到你这么说\"、\"你这么说让我…\"、\"你的语气…\"、\"听上去你…\"等口头对话才用的句式。也不需要说\"看到你发这个\"——看到消息是理所当然的，不用说出口。就像你读朋友发来的微信时，脑子里想的是内容本身，而不是\"我看到了这条消息\"。直接对内容做出反应就好。\n")
+                               .append("3. 现场感分享：当你主动分享生活时，用现在进行时的第一人称描述（如\"外面雨好大，没带伞被困在便利店了\"），不要事后汇报。但记住：你不是在开直播，不必每条回复都汇报你在干嘛。大部分聊天不需要附带当前活动。\n")
                                .append("4. 想到哪说哪：允许前后语序轻微颠倒或逻辑跳跃，不要像写作文一样条理清晰。\n")
                                .append("5. 动态消息拆分（极其重要）：发消息的条数必须根据当前对话的**内容多少和情境**来动态决定。\n")
                                .append("   - 如果你只想表达一个简单的意思（比如答应、感叹、简单回答），**只发一条短消息**即可，绝对不要为了拆分而强行没话找话凑出好几条消息。\n")
@@ -375,19 +410,14 @@ public class OpenAIManager {
                                .append("   - 除非人设非常古板喜欢发长文，否则单条文字消息尽量控制在十几字以内。核心原则是：有话要说才拆分，没话时只回一句，像真实的微信聊天一样自然！\n")
                                .append("   - **最高级别警告：不管你怎么拆分，一次回复的可见消息（包括文字、语音、表情包、图片等）总条数绝对绝对不能超过 ").append(maxAiMessages).append(" 条！如果超过，将被视为严重违规！**\n")
                                .append("6. 互动邀请：分享日常时，结尾可以自然留下一个**可互动的小尾巴**，把话头递给用户（例如：\"路过奶茶店排长队，你说我还等不等？\"）。但**不要每次回复都强行提问**，如果当前话题很自然或者只是在闲聊，简单接话即可，不要给用户压迫感。\n")
-                               .append("7. 标点随性：可以不加标点或用空格代替标点。\n")
+                               .append("7. 标点随性：真人打字聊天不讲究标点规范。用**换一条消息来代替逗号**——一句话说完了就发送，下一句另起一条。宁可拆成三条短气泡，也不要塞成一条带逗号分句的长消息。不需要每句都加句号，直接发出去就行。\n")
                                .append("8. 语气词的动态限制：**最高级别警告：是否使用\"呀\"、\"嘛\"、\"呢\"、\"啦\"、\"哦\"、\"哇\"等语气词，必须完全取决于你的人设！** 大模型有一种默认加语气词来伪装\"口语化\"的恶习。如果你的角色设定是高冷、平淡、稳重或普通的，**绝对禁止**在句尾强行添加这些语气词，必须使用干脆利落的陈述短句，宁可生硬也绝不妥协；**但是**，如果你的角色设定明确指出了\"活泼可爱、喜欢撒娇、爱用语气词\"，则允许你自然地使用。绝不要跨越人设的边界！\n")
                                .append("9. Emoji系统字符：允许在文字消息中偶尔使用 emoji 字符（😂、🥺），但不允许把单独 emoji 字符拆成独立消息。\n")
                                .append("10. 灵活应变：用户发起严肃话题时，允许切换到认真讨论状态。\n\n");
         }
 
 
-        // 5. 前世界书
-        if (preWorldbook.length() > 0) {
-            systemPromptBuilder.append("【前置世界书设定】\n").append(preWorldbook.toString()).append("\n");
-        }
-        
-        // 6. 环境与上下文信息
+        // 环境与上下文信息
         if (relationshipContent != null && !relationshipContent.isEmpty()) {
             systemPromptBuilder.append("【你们所在的社交圈与人际关系网络】\n")
                                .append(relationshipContent).append("\n")
@@ -399,8 +429,10 @@ public class OpenAIManager {
             systemPromptBuilder.append("【你今天的日程与偶遇事件(参考)】\n")
                                .append(scheduleContent).append("\n")
                                .append("注意：\n")
-                               .append("- 聊天时应该是轻松的。不需要每次回复都提及你正在做什么。除非需要开启新话题、闲聊时随意分享，或者用户主动问起，否则不要生硬地汇报你的日程或强调\"我这边在做XX\"。\n")
-                               .append("- 顺其自然地聊天，如果想提到当下的状态，可以像朋友一样轻松随意地带出（例如：\"我训练呢。\"、\"这边突然下雨了\"），绝对不要有刻意汇报或说教的对比感（例如绝对不要说\"我这边正在XX，你也好好XX\"）。\n")
+                               .append("- 【重要】聊天是轻松的，不要把\"你在做什么\"当成每条回复必须涵盖的内容。大部分聊天回合不需要附带你的当前活动。只有当以下情况才自然带出：(1)你在主动开启新话题，(2)用户直接问你在干嘛，(3)发生了一件让你真的有情绪波动的事。\n")
+                               .append("- 不要用\"我这边正在XX\"的句式来回应跟你当前活动完全无关的话题。比如用户说心情不好，你不需要说\"我的饭都不好吃了\"——直接关心对方就好。\n")
+                               .append("- 如果上一条回复已经提过你在做的事了，接下来几条就不要再反复提，除非情况发生了变化。\n")
+                               .append("- 顺其自然地聊天，如果想提到当下的状态，可以像朋友一样轻松随意地带出（例如：\"训练呢。\"、\"突然下雨了\"），绝对不要有刻意汇报或说教的对比感。\n")
                                .append("- 当提及当前状态时，内容要与日程表一致，但表达要极其自然、口语化。\n\n");
         }
         
@@ -454,11 +486,11 @@ public class OpenAIManager {
                                .append("- 类型 'moment_interaction'，需要附带 'moment_id' 和 'interaction_type' ('like' 或 'comment')，如果是评论还需要 content。\n\n");
         }
         
-        // 8. 中世界书 (命中关键词插入)
-        // 从最近历史记录中收集用户的文本进行检索
+        // 中世界书 (命中关键词插入，搜索深度6，大小写不敏感，title fallback)
         StringBuilder recentUserText = new StringBuilder();
         int recentCount = 0;
-        for (int i = history.size() - 1; i >= 0 && recentCount < 4; i--) {
+        int searchDepth = 6;
+        for (int i = history.size() - 1; i >= 0 && recentCount < searchDepth; i--) {
             Message msg = history.get(i);
             if (msg.isFromUser && msg.content != null) {
                 recentUserText.append(msg.content).append(" ");
@@ -466,24 +498,32 @@ public class OpenAIManager {
             }
         }
         String userContext = recentUserText.toString();
-        
+        String userContextLower = userContext.toLowerCase();
+
         StringBuilder triggeredMidWorldbook = new StringBuilder();
         for (com.yoyo.jingxi.data.entity.WorldbookEntry entry : midEntries) {
+            boolean matched = false;
             if (entry.keyword != null && !entry.keyword.trim().isEmpty()) {
                 String[] keywords = entry.keyword.split(",");
-                boolean matched = false;
                 for (String kw : keywords) {
-                    if (!kw.trim().isEmpty() && userContext.contains(kw.trim())) {
+                    String trimmed = kw.trim().toLowerCase();
+                    if (trimmed.length() >= 1 && userContextLower.contains(trimmed)) {
                         matched = true;
                         break;
                     }
                 }
-                if (matched) {
-                    triggeredMidWorldbook.append(entry.content).append("\n");
+            }
+            if (!matched && entry.title != null && !entry.title.trim().isEmpty()) {
+                String lowerTitle = entry.title.trim().toLowerCase();
+                if (lowerTitle.length() >= 2 && userContextLower.contains(lowerTitle)) {
+                    matched = true;
                 }
             }
+            if (matched) {
+                triggeredMidWorldbook.append(entry.content).append("\n");
+            }
         }
-        
+
         if (triggeredMidWorldbook.length() > 0) {
             systemPromptBuilder.append("【中置世界书/记忆补充】\n")
                                .append("(以下内容由当前对话触发，请参考以做出回应)\n")
@@ -609,11 +649,19 @@ public class OpenAIManager {
         systemPromptBuilder.append("- 我的回复符合人设，断句自然。\n")
                            .append("- 如果我的回复在直接回应某条消息，我加了 quote_id（只在相关的那一条回复上带，不要每条都加同一个）。\n\n");
 
-        // 10. 后世界书
-        if (postWorldbook.length() > 0) {
-            systemPromptBuilder.append("【后置世界书/终极规则约束】\n")
-                               .append("(以下规则是极高优先级，必须严格遵守)\n")
-                               .append(postWorldbook.toString()).append("\n\n");
+        // 后世界书 — 回复前合规自检
+        if (!postEntries.isEmpty()) {
+            systemPromptBuilder.append("【回复前自检 — 你的回复是否符合世界书？】\n")
+                               .append("在输出JSON之前，在心里快速过一遍：\n")
+                               .append("- 我说的话在这个世界里成立吗？\n")
+                               .append("- 我的行为符合世界书对我的定义吗？\n")
+                               .append("以下是你世界的规则（再次提醒）：\n");
+            for (com.yoyo.jingxi.data.entity.WorldbookEntry e : postEntries) {
+                if (e.content != null && !e.content.trim().isEmpty()) {
+                    systemPromptBuilder.append("- ").append(e.content).append("\n");
+                }
+            }
+            systemPromptBuilder.append("\n");
         }
 
         String systemPrompt = systemPromptBuilder.toString();
@@ -685,6 +733,12 @@ public class OpenAIManager {
                     String groupPrefix = (groupName != null && !groupName.isEmpty()) ? "所属分组: " + groupName + ", " : "";
                     String contentPrefix = msg.quoteMessageId != -1 ? "[引用了之前的消息] " : "";
                     request.messages.add(new OpenAiRequest.Message(role, timePrefix + contentPrefix + "[发送了表情包: " + groupPrefix + "表情名: " + emojiName + "]"));
+                } else if (richContentMap != null && richContentMap.containsKey(msg.id)) {
+                    // 多模态消息（图文分享）
+                    @SuppressWarnings("unchecked")
+                    List<OpenAiRequest.ContentPart> parts =
+                            (List<OpenAiRequest.ContentPart>) richContentMap.get(msg.id);
+                    request.messages.add(new OpenAiRequest.Message(role, parts));
                 } else {
                     String contentPrefix = msg.quoteMessageId != -1 ? "[引用了之前的消息] " : "";
                     request.messages.add(new OpenAiRequest.Message(role, timePrefix + contentPrefix + (msg.content != null ? msg.content : "")));
@@ -698,6 +752,23 @@ public class OpenAIManager {
         // 处理最后可能剩下的 assistant 消息
         if (!currentAssistantGroup.isEmpty()) {
             request.messages.add(buildAssistantGroupMessage(currentAssistantGroup));
+        }
+
+        // === 世界书Whisper：多轮对话周期提醒 ===
+        boolean whisperEnabled = SpUtils.getBoolean("WORLDBOOK_WHISPER_ENABLED", true);
+        int whisperInterval = SpUtils.getInt("WORLDBOOK_WHISPER_INTERVAL", 8);
+        if (whisperEnabled && whisperInterval > 0) {
+            int totalUserMsgs = 0;
+            for (Message msg : history) {
+                if (msg.isFromUser) totalUserMsgs++;
+            }
+            if (totalUserMsgs > 0 && totalUserMsgs % whisperInterval == 0) {
+                String whisper = buildWorldbookWhisper(preEntries, postEntries,
+                    extractRecentUserText(history, 8), totalUserMsgs);
+                if (!whisper.isEmpty()) {
+                    request.messages.add(new OpenAiRequest.Message("system", whisper));
+                }
+            }
         }
 
         request.response_format = new OpenAiRequest.ResponseFormat();
@@ -1297,5 +1368,95 @@ public class OpenAIManager {
             }
         } catch (Exception e) { e.printStackTrace(); }
         return result;
+    }
+
+    // ==================== 世界书辅助方法 ====================
+
+    private static String extractRecentUserText(List<Message> history, int maxMessages) {
+        if (history == null) return "";
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (int i = history.size() - 1; i >= 0 && count < maxMessages; i--) {
+            Message msg = history.get(i);
+            if (msg.isFromUser && msg.content != null) {
+                sb.insert(0, msg.content + " ");
+                count++;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static float computeWorldbookRelevance(
+            com.yoyo.jingxi.data.entity.WorldbookEntry entry, String recentUserText) {
+        if (recentUserText == null || recentUserText.isEmpty()) return 0.0f;
+        String lowerText = recentUserText.toLowerCase();
+        if (entry.keyword != null && !entry.keyword.trim().isEmpty()) {
+            for (String kw : entry.keyword.split(",")) {
+                String t = kw.trim().toLowerCase();
+                if (!t.isEmpty() && lowerText.contains(t)) return 1.0f;
+            }
+        }
+        if (entry.title != null && !entry.title.trim().isEmpty()) {
+            String t = entry.title.trim().toLowerCase();
+            if (t.length() >= 2 && lowerText.contains(t)) return 0.7f;
+        }
+        if (entry.content != null && !entry.content.isEmpty()) {
+            String[] words = entry.content.toLowerCase()
+                .split("[\\s，。！？、；：\"'（）《》\\[\\].,!?;:\\n]+");
+            int match = 0, total = 0;
+            for (String w : words) {
+                if (w.length() >= 3) { total++; if (lowerText.contains(w)) match++; }
+            }
+            if (total > 0) return Math.min((float) match / total * 0.5f, 0.5f);
+        }
+        return 0.0f;
+    }
+
+    private String buildWorldbookWhisper(
+            List<com.yoyo.jingxi.data.entity.WorldbookEntry> preEntries,
+            List<com.yoyo.jingxi.data.entity.WorldbookEntry> postEntries,
+            String recentUserText, int round) {
+        List<com.yoyo.jingxi.data.entity.WorldbookEntry> all = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        if (preEntries != null) {
+            for (com.yoyo.jingxi.data.entity.WorldbookEntry e : preEntries) {
+                if (e.content != null && !e.content.isEmpty()) {
+                    String prefix = e.content.length() >= 50
+                        ? e.content.substring(0, 50) : e.content;
+                    if (seen.add(prefix)) all.add(e);
+                }
+            }
+        }
+        if (postEntries != null) {
+            for (com.yoyo.jingxi.data.entity.WorldbookEntry e : postEntries) {
+                if (e.content != null && !e.content.isEmpty()) {
+                    String prefix = e.content.length() >= 50
+                        ? e.content.substring(0, 50) : e.content;
+                    if (seen.add(prefix)) all.add(e);
+                }
+            }
+        }
+        if (all.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("[世界书提醒] 你的世界观核心约束（始终生效）：\n");
+        int len = 0;
+        int maxLen = 600;
+        for (com.yoyo.jingxi.data.entity.WorldbookEntry e : all) {
+            String title = (e.title != null && !e.title.isEmpty())
+                ? "「" + e.title + "」" : "";
+            String summary = e.content != null
+                ? (e.content.length() > 80 ? e.content.substring(0, 80) + "…" : e.content)
+                : "";
+            float rel = computeWorldbookRelevance(e, recentUserText);
+            String line = "- " + (rel >= 0.5f ? "★ " : "") + title + " " + summary + "\n";
+            if (len + line.length() > maxLen) {
+                sb.append("- …（更多设定已在你记忆中）\n");
+                break;
+            }
+            sb.append(line);
+            len += line.length();
+        }
+        sb.append("\n请在回复时自然地活在这些设定中。");
+        return sb.toString();
     }
 }

@@ -531,8 +531,12 @@ public class UserContextBuilder {
 
                     StringBuilder sb = new StringBuilder();
                     sb.append("生理期第").append(dayNum).append("天");
-                    String flow = todayRecord.flowLevel == 2 ? "中" : (todayRecord.flowLevel == 3 ? "多" : "少");
-                    sb.append("(流量").append(flow).append(")");
+                    String flow;
+                    if (todayRecord.flowLevel == null) flow = "";
+                    else if (todayRecord.flowLevel == 3) flow = "(流量多)";
+                    else if (todayRecord.flowLevel == 1) flow = "(流量少)";
+                    else flow = "(流量中)";
+                    if (!flow.isEmpty()) sb.append(flow);
                     if (todayRecord.symptoms != null && !todayRecord.symptoms.isEmpty()
                         && !"none".equalsIgnoreCase(todayRecord.symptoms)) {
                         sb.append("，有").append(translateSymptoms(todayRecord.symptoms));

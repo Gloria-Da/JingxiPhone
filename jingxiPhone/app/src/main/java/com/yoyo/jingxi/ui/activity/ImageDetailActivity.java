@@ -2,13 +2,14 @@ package com.yoyo.jingxi.ui.activity;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.github.chrisbanes.photoview.PhotoView;
 import com.yoyo.jingxi.R;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,8 @@ import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.Moment;
 import com.yoyo.jingxi.data.entity.Message;
 
+import java.util.ArrayList;
+
 public class ImageDetailActivity extends AppCompatActivity {
 
     private String currentImageUrl;
@@ -24,6 +27,8 @@ public class ImageDetailActivity extends AppCompatActivity {
     private int messageId = -1;
     private int imageIndex = -1;
     private PhotoView photoView;
+    private ViewPager2 viewPager;
+    private ArrayList<String> allImageUrls;
     private android.widget.TextView tvDesc;
 
     private BroadcastReceiver momentUpdateReceiver = new BroadcastReceiver() {
@@ -119,6 +124,16 @@ public class ImageDetailActivity extends AppCompatActivity {
                                 .into(photoView);
                     }
                 }
+                // 同步更新 ViewPager2 当前页（生成完成后实时替换占位图）
+                if (viewPager.getVisibility() == android.view.View.VISIBLE
+                        && viewPager.getAdapter() != null
+                        && allImageUrls != null) {
+                    int curPos = viewPager.getCurrentItem();
+                    if (curPos >= 0 && curPos < allImageUrls.size()) {
+                        allImageUrls.set(curPos, currentImageUrl);
+                        viewPager.getAdapter().notifyItemChanged(curPos);
+                    }
+                }
             });
         }
     }
@@ -160,7 +175,7 @@ public class ImageDetailActivity extends AppCompatActivity {
             } else if (messageId != -1) {
                 Message message = db.messageDao().getMessageByIdSync(messageId);
                 if (message != null && message.imageDesc != null) {
-                    message.imageDesc = message.imageDesc.replace("error://", "virtual://");
+                    message.imageDesc = message.imageDesc.substring("error://".length());
                     db.messageDao().update(message);
                     
                     Intent broadcastIntent = new Intent("com.yoyo.jingxi.ACTION_MESSAGE_UPDATED");
@@ -179,9 +194,25 @@ public class ImageDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image_detail);
 
         photoView = findViewById(R.id.photo_view);
+        viewPager = findViewById(R.id.view_pager);
         tvDesc = findViewById(R.id.tv_virtual_desc);
         currentImageUrl = getIntent().getStringExtra("image_url");
-        
+
+        // 多图翻页：传入 image_urls 时使用 ViewPager2 浏览整个对话的所有图片
+        allImageUrls = getIntent().getStringArrayListExtra("image_urls");
+        int startIndex = getIntent().getIntExtra("start_index", 0);
+        if (allImageUrls != null && !allImageUrls.isEmpty()) {
+            photoView.setVisibility(android.view.View.GONE);
+            viewPager.setVisibility(android.view.View.VISIBLE);
+            viewPager.setAdapter(new ImagePagerAdapter(allImageUrls));
+            if (startIndex >= 0 && startIndex < allImageUrls.size()) {
+                viewPager.setCurrentItem(startIndex, false);
+            }
+        } else {
+            viewPager.setVisibility(android.view.View.GONE);
+            photoView.setVisibility(android.view.View.VISIBLE);
+        }
+
         momentId = getIntent().getIntExtra("moment_id", -1);
         if (momentId == -1) {
             long mIdLong = getIntent().getLongExtra("moment_id", -1L);
@@ -322,7 +353,7 @@ public class ImageDetailActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-    
+
     private void saveImageToGallery(String imagePath) {
         new Thread(() -> {
             try {
@@ -413,5 +444,47 @@ public class ImageDetailActivity extends AppCompatActivity {
                 runOnUiThread(() -> android.widget.Toast.makeText(this, "保存失败: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show());
             }
         }).start();
+    }
+
+    /** ViewPager2 adapter — 每页一个 PhotoView，支持捏合缩放 */
+    private class ImagePagerAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<ImagePagerAdapter.PageHolder> {
+        private final ArrayList<String> urls;
+
+        ImagePagerAdapter(ArrayList<String> urls) { this.urls = urls; }
+
+        @NonNull @Override
+        public PageHolder onCreateViewHolder(@NonNull android.view.ViewGroup parent, int viewType) {
+            PhotoView pv = new PhotoView(parent.getContext());
+            pv.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+            return new PageHolder(pv);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull PageHolder holder, int position) {
+            String url = urls.get(position);
+            if (url != null && !url.isEmpty()) {
+                if (url.startsWith("virtual://") || url.startsWith("error://")) {
+                    Glide.with(holder.photoView.getContext())
+                            .load(R.drawable.bg_virtual_image)
+                            .into(holder.photoView);
+                } else {
+                    Glide.with(holder.photoView.getContext()).load(url)
+                            .error(R.drawable.bg_avatar_placeholder).into(holder.photoView);
+                }
+            }
+            holder.photoView.setOnClickListener(v -> finish());
+        }
+
+        @Override public int getItemCount() { return urls.size(); }
+
+        class PageHolder extends androidx.recyclerview.widget.RecyclerView.ViewHolder {
+            PhotoView photoView;
+            PageHolder(@NonNull android.view.View itemView) {
+                super(itemView);
+                photoView = (PhotoView) itemView;
+            }
+        }
     }
 }

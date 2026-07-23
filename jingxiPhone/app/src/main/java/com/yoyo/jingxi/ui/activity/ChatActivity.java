@@ -35,12 +35,20 @@ import com.yoyo.jingxi.network.OpenAiResponse;
 import com.yoyo.jingxi.network.SttManager;
 import com.yoyo.jingxi.network.SttProvider;
 import com.yoyo.jingxi.ui.adapter.ChatAdapter;
+import com.yoyo.jingxi.utils.LinkMetadataExtractor;
+import com.yoyo.jingxi.utils.WebViewMetadataExtractor;
+import com.yoyo.jingxi.utils.XiaohongshuCrawler;
 import com.yoyo.jingxi.utils.SpUtils;
+import com.yoyo.jingxi.utils.VoiceGenerateHelper;
 
 import java.io.File;
 import java.io.IOException;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 import retrofit2.Call;
@@ -49,6 +57,7 @@ import retrofit2.Response;
 
 import com.yoyo.jingxi.data.entity.ChatSession;
 import com.yoyo.jingxi.data.entity.MyPersona;
+import com.yoyo.jingxi.data.entity.SharedContent;
 
 import android.view.View;
 import android.widget.ImageView;
@@ -79,7 +88,13 @@ public class ChatActivity extends AppCompatActivity {
     private String friendName;
     private ImageView ivChatBg;
     private static final int REQUEST_PICK_BG = 2001;
-    
+
+    // 多选模式
+    private boolean isMultiSelectMode = false;
+    private Set<Integer> selectedMessageIds = new LinkedHashSet<>();
+    private Toolbar multiSelectToolbar;
+    private TextView tvSelectedCount;
+
     private ChatSession currentSession;
     private Character currentCharacter;
     private MyPersona currentMyPersona;
@@ -105,7 +120,13 @@ public class ChatActivity extends AppCompatActivity {
     private boolean isRecording = false;
     private boolean isVoiceCancelled = false;
     private float startY;
+    private LinearLayout layoutInputArea;
     private LinearLayout layoutFunctionPanel;
+    private LinearLayout layoutMultiSelectActions;
+    private Button btnMultiForwardSingle;
+    private Button btnMultiForwardMerge;
+    private Button btnMultiDelete;
+    private Button btnMultiCancel;
     private LinearLayout btnFuncImage;
     private LinearLayout btnFuncVoice;
     private LinearLayout btnFuncCall;
@@ -127,6 +148,7 @@ public class ChatActivity extends AppCompatActivity {
     private Message pendingQuoteMsg;
 
     private AppDatabase db;
+    private java.util.concurrent.ExecutorService dbExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
     private boolean shouldAutoScroll = true;
     private BroadcastReceiver aiReplyStatusReceiver = new BroadcastReceiver() {
         @Override
@@ -159,6 +181,9 @@ public class ChatActivity extends AppCompatActivity {
         com.yoyo.jingxi.utils.ThemeManager.applyTheme(this);
         setContentView(R.layout.activity_chat);
 
+        db = AppDatabase.getDatabase(this);
+        aiManager = new OpenAIManager();
+
         sessionId = getIntent().getIntExtra("session_id", -1);
         friendName = getIntent().getStringExtra("friend_name");
 
@@ -168,6 +193,12 @@ public class ChatActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        toolbar.setNavigationOnClickListener(v -> finish());
+
+        // 多选Toolbar
+        multiSelectToolbar = findViewById(R.id.toolbarMultiSelect);
+        tvSelectedCount = findViewById(R.id.tvSelectedCount);
+        setupMultiSelectToolbar();
         toolbar.setNavigationOnClickListener(v -> finish());
         
         // Remove the original ImageView click listener logic if we are using options menu
@@ -196,8 +227,20 @@ public class ChatActivity extends AppCompatActivity {
         btnVoiceCancel = findViewById(R.id.btnVoiceCancel);
         btnVoiceSend = findViewById(R.id.btnVoiceSend);
 
+        layoutInputArea = findViewById(R.id.layoutInputArea);
         layoutFunctionPanel = findViewById(R.id.layoutFunctionPanel);
         btnFuncImage = findViewById(R.id.btnFuncImage);
+
+        // 多选底部操作栏
+        layoutMultiSelectActions = findViewById(R.id.layoutMultiSelectActions);
+        btnMultiForwardSingle = findViewById(R.id.btnMultiForwardSingle);
+        btnMultiForwardMerge = findViewById(R.id.btnMultiForwardMerge);
+        btnMultiDelete = findViewById(R.id.btnMultiDelete);
+        btnMultiCancel = findViewById(R.id.btnMultiCancel);
+        btnMultiForwardSingle.setOnClickListener(v -> startForwardActivity(0));
+        btnMultiForwardMerge.setOnClickListener(v -> startForwardActivity(1));
+        btnMultiDelete.setOnClickListener(v -> deleteSelectedMessages());
+        btnMultiCancel.setOnClickListener(v -> exitMultiSelectMode());
         btnFuncVoice = findViewById(R.id.btnFuncVoice);
         btnFuncCall = findViewById(R.id.btnFuncCall);
         btnFuncRegenerate = findViewById(R.id.btnFuncRegenerate);
@@ -248,6 +291,10 @@ public class ChatActivity extends AppCompatActivity {
         });
 
         chatAdapter = new ChatAdapter(friendName);
+        VoiceGenerateHelper vgh = new VoiceGenerateHelper(this, db, dbExecutor, mainHandler);
+        chatAdapter.setVoiceGenerateHelper(vgh);
+        chatAdapter.setDb(db);
+        chatAdapter.setDbExecutor(dbExecutor);
         rvChat.setAdapter(chatAdapter);
         rvChat.setItemAnimator(null);
         
@@ -272,15 +319,12 @@ public class ChatActivity extends AppCompatActivity {
             });
         });
 
-        db = AppDatabase.getDatabase(this);
-        aiManager = new OpenAIManager();
-
         // 加载会话和角色信息
         Executors.newSingleThreadExecutor().execute(() -> {
             currentSession = db.chatSessionDao().getSessionById(sessionId);
             if (currentSession != null) {
                 currentCharacter = db.characterDao().getCharacterById(currentSession.characterId);
-                
+
                 if (currentCharacter != null) {
                     mainHandler.post(() -> chatAdapter.setCharacterAvatarPath(currentCharacter.avatarPath));
                 }
@@ -295,7 +339,20 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 }
             }
+
+            // 加载分享内容缓存
+            List<SharedContent> sharedContents = db.sharedContentDao().getBySessionId(sessionId);
+            if (sharedContents != null && !sharedContents.isEmpty()) {
+                mainHandler.post(() -> chatAdapter.prefetchSharedContent(sharedContents));
+            }
         });
+
+        // 检查是否有分享内容ID（来自SendToAgentActivity）
+        int sharedContentId = getIntent().getIntExtra("shared_content_id", 0);
+        if (sharedContentId > 0) {
+            // 稍等会话加载完成后触发AI回复
+            new Handler().postDelayed(() -> requestAiReplyWithSharedContent(sharedContentId), 500);
+        }
 
         // 监听消息列表变化
         db.messageDao().getMessagesBySessionId(sessionId).observe(this, messages -> {
@@ -322,7 +379,19 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 }
 
-                chatAdapter.setMessages(visibleMessages);
+                final int finalSavedPos = savedPos;
+                final int finalSavedOffset = savedOffset;
+                chatAdapter.setMessages(visibleMessages, () -> {
+                    // DiffUtil 提交完成后处理滚动位置
+                    if (shouldAutoScroll && visibleMessages.size() > 0) {
+                        rvChat.scrollToPosition(visibleMessages.size() - 1);
+                    } else if (finalSavedPos != RecyclerView.NO_POSITION) {
+                        LinearLayoutManager lm = (LinearLayoutManager) rvChat.getLayoutManager();
+                        if (lm != null) {
+                            lm.scrollToPositionWithOffset(finalSavedPos, finalSavedOffset);
+                        }
+                    }
+                });
 
                 // 加载心声数据：批量查询当前可见消息中哪些有心声
                 Executors.newSingleThreadExecutor().execute(() -> {
@@ -340,15 +409,14 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 });
 
-                if (shouldAutoScroll && visibleMessages.size() > 0) {
-                    rvChat.post(() -> rvChat.scrollToPosition(visibleMessages.size() - 1));
-                } else if (savedPos != RecyclerView.NO_POSITION) {
-                    // Restore scroll position to prevent jumping when reading history
-                    final int pos = savedPos;
-                    final int off = savedOffset;
-                    rvChat.post(() -> ((LinearLayoutManager) rvChat.getLayoutManager())
-                        .scrollToPositionWithOffset(pos, off));
-                }
+                // 刷新分享内容缓存，确保转发来的链接卡片立即可见
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    List<SharedContent> contents = db.sharedContentDao().getBySessionId(sessionId);
+                    if (contents != null && !contents.isEmpty()) {
+                        mainHandler.post(() -> chatAdapter.prefetchSharedContent(contents));
+                    }
+                });
+
             }
         });
 
@@ -422,12 +490,12 @@ public class ChatActivity extends AppCompatActivity {
                 // 切换到语音模式
                 btnVoiceRecord.setVisibility(View.VISIBLE);
                 etInput.setVisibility(View.GONE);
-                ivVoiceToggle.setImageResource(android.R.drawable.ic_menu_edit); // 使用现有图标临时表示键盘，如果有更好的图标可以替换
+                ivVoiceToggle.setImageResource(R.drawable.ic_keyboard);
             } else {
                 // 切换回文本模式
                 btnVoiceRecord.setVisibility(View.GONE);
                 etInput.setVisibility(View.VISIBLE);
-                ivVoiceToggle.setImageResource(android.R.drawable.ic_btn_speak_now);
+                ivVoiceToggle.setImageResource(R.drawable.ic_mic);
             }
         });
 
@@ -652,50 +720,67 @@ public class ChatActivity extends AppCompatActivity {
         SpUtils.putInt("CURRENT_CHAT_SESSION_ID", -1);
     }
 
-    private final ActivityResultLauncher<Intent> pickImageLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Uri selectedImage = result.getData().getData();
-                    if (selectedImage != null) {
-                        // 先将图片转为Base64，因为OpenAI Vision API 需要网络URL或Base64数据
-                        Executors.newSingleThreadExecutor().execute(() -> {
+    /**
+     * 多图选择器：使用 GetMultipleContents 支持一次选多张。
+     * 选 1 张 → type=3 普通单图；选 2+ 张 → type=5 合并多图 + PhotoStackView。
+     */
+    private final ActivityResultLauncher<String> multiImageLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetMultipleContents(),
+            uris -> {
+                if (uris == null || uris.isEmpty()) return;
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    try {
+                        java.util.List<String> filePaths = new java.util.ArrayList<>();
+                        for (Uri uri : uris) {
                             try {
-                                java.io.InputStream inputStream = getContentResolver().openInputStream(selectedImage);
+                                java.io.InputStream inputStream = getContentResolver().openInputStream(uri);
                                 android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(inputStream);
-                                
-                                // 压缩图片，防止过大导致请求失败
+                                if (bitmap == null) continue;
+
+                                // 压缩图片
                                 int maxWidth = 1024;
                                 int maxHeight = 1024;
-                                float scale = Math.min(((float)maxWidth / bitmap.getWidth()), ((float)maxHeight / bitmap.getHeight()));
+                                float scale = Math.min(((float) maxWidth / bitmap.getWidth()), ((float) maxHeight / bitmap.getHeight()));
                                 if (scale < 1) {
                                     android.graphics.Matrix matrix = new android.graphics.Matrix();
                                     matrix.postScale(scale, scale);
                                     bitmap = android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
                                 }
-                                
+
                                 java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
                                 bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, outputStream);
                                 byte[] byteArray = outputStream.toByteArray();
 
-                                // 保存图片到文件，避免 Base64 存入数据库导致 CursorWindow 溢出
                                 File imageDir = new File(getExternalFilesDir(null), "images");
                                 if (!imageDir.exists()) imageDir.mkdirs();
-                                String fileName = "msg_img_" + System.currentTimeMillis() + ".jpg";
+                                String fileName = "msg_img_" + System.currentTimeMillis() + "_" + filePaths.size() + ".jpg";
                                 File imageFile = new File(imageDir, fileName);
                                 java.io.FileOutputStream fos = new java.io.FileOutputStream(imageFile);
                                 fos.write(byteArray);
                                 fos.close();
-                                String filePath = imageFile.getAbsolutePath();
-
-                                mainHandler.post(() -> sendImageMessage(filePath, false, null));
+                                filePaths.add(imageFile.getAbsolutePath());
                             } catch (Exception e) {
                                 e.printStackTrace();
-                                mainHandler.post(() -> Toast.makeText(ChatActivity.this, "处理图片失败", Toast.LENGTH_SHORT).show());
                             }
-                        });
+                        }
+
+                        if (filePaths.isEmpty()) {
+                            mainHandler.post(() -> Toast.makeText(ChatActivity.this, "处理图片失败", Toast.LENGTH_SHORT).show());
+                            return;
+                        }
+
+                        if (filePaths.size() == 1) {
+                            // 单张 → 普通单图
+                            mainHandler.post(() -> sendImageMessage(filePaths.get(0), false, null));
+                        } else {
+                            // 多张 → 合并多图 + PhotoStackView
+                            mainHandler.post(() -> sendMultiImageMessage(filePaths));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        mainHandler.post(() -> Toast.makeText(ChatActivity.this, "处理图片失败", Toast.LENGTH_SHORT).show());
                     }
-                }
+                });
             }
     );
 
@@ -836,9 +921,8 @@ public class ChatActivity extends AppCompatActivity {
                 descBuilder.setNegativeButton("取消", (dialog1, which1) -> dialog1.cancel());
                 descBuilder.show();
             } else if (which == 1) {
-                // 真实图片
-                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                pickImageLauncher.launch(intent);
+                // 真实图片（多选，1张=单图，2+张=PhotoStackView堆叠）
+                multiImageLauncher.launch("image/*");
             }
         });
         builder.show();
@@ -916,6 +1000,28 @@ public class ChatActivity extends AppCompatActivity {
                 if (isVirtual) {
                     com.yoyo.jingxi.utils.ImageGenerationManager.getInstance().checkAndGenerateImagesForMessage(msg);
                 }
+        });
+    }
+
+    /**
+     * 发送多图消息（type=5），图片路径用逗号拼接存入 imageUrl。
+     * 聊天界面中通过 PhotoStackView 堆叠显示。
+     */
+    private void sendMultiImageMessage(java.util.List<String> filePaths) {
+        if (currentSession == null || filePaths == null || filePaths.isEmpty()) return;
+        Message msg = new Message();
+        msg.sessionId = sessionId;
+        msg.characterId = currentSession.characterId;
+        msg.isFromUser = true;
+        msg.timestamp = System.currentTimeMillis();
+        msg.quoteMessageId = pendingQuoteMsg != null ? pendingQuoteMsg.id : -1;
+        pendingQuoteMsg = null;
+        msg.type = 5; // 合并多图
+        msg.imageUrl = TextUtils.join(",", filePaths);
+        msg.content = "[图片]";
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            db.messageDao().insert(msg);
         });
     }
 
@@ -1037,12 +1143,16 @@ public class ChatActivity extends AppCompatActivity {
 
         if (currentSession == null) return;
 
+        // 检测是否为链接（http/https 或常见短链）
+        String detectedUrl = extractUrlFromText(content);
+        final boolean isUrl = detectedUrl != null;
+
         Message msg = new Message();
         msg.sessionId = sessionId;
-        msg.characterId = currentSession.characterId; // 冗余保存
+        msg.characterId = currentSession.characterId;
         msg.content = content;
         msg.isFromUser = true;
-        msg.type = 0;
+        msg.type = isUrl ? 7 : 0;
         msg.timestamp = System.currentTimeMillis();
         if (pendingQuoteMsg != null) {
             msg.quoteMessageId = pendingQuoteMsg.id;
@@ -1051,13 +1161,130 @@ public class ChatActivity extends AppCompatActivity {
             msg.quoteMessageId = -1;
         }
 
+        final String urlForMeta = detectedUrl;
         Executors.newSingleThreadExecutor().execute(() -> {
-            db.messageDao().insert(msg);
-            db.chatSessionDao().updateUnreadCount(sessionId, 0); // 自己发消息也会重置未读
+            long msgId = db.messageDao().insert(msg);
+            db.chatSessionDao().updateUnreadCount(sessionId, 0);
+
+            // 如果是链接，后台提取元数据并创建 SharedContent
+            if (isUrl && urlForMeta != null) {
+                // 先创建占位 SharedContent
+                SharedContent sc = new SharedContent();
+                sc.sourceUrl = urlForMeta;
+                sc.siteName = LinkMetadataExtractor.fallbackSiteName(urlForMeta);
+                sc.contentTitle = sc.siteName; // 临时显示站点名，爬虫成功后替换
+                sc.timestamp = System.currentTimeMillis();
+                sc.sessionId = sessionId;
+                sc.characterId = currentSession.characterId;
+                sc.messageId = (int) msgId;
+                sc.id = (int) db.sharedContentDao().insert(sc);
+
+                // 更新 adapter 缓存，初始显示站点名
+                SharedContent placeholderSc = sc;
+                mainHandler.post(() -> chatAdapter.addSharedContentToCache(placeholderSc));
+
+                final SharedContent updatedSc = sc;
+                final boolean isXhs = urlForMeta.contains("xiaohongshu.com")
+                        || urlForMeta.contains("xhslink.com")
+                        || urlForMeta.contains("xhslink.cn");
+
+                if (isXhs) {
+                    // 小红书：跳过 HTTP 提取（会消耗 xsec_token），直接走爬虫
+                    XiaohongshuCrawler.crawl(xhsMeta -> {
+                        updatedSc.contentTitle = xhsMeta.title;
+                        updatedSc.description = xhsMeta.description;
+                        updatedSc.thumbnailUrl = xhsMeta.imageUrl;
+                        if (xhsMeta.siteName != null) updatedSc.siteName = xhsMeta.siteName;
+                        if (xhsMeta.fullText != null) updatedSc.fullText = xhsMeta.fullText;
+                        if (xhsMeta.imageUrls != null && !xhsMeta.imageUrls.isEmpty()) {
+                            updatedSc.imageUrlsJson = new com.google.gson.Gson().toJson(xhsMeta.imageUrls);
+                        }
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            db.sharedContentDao().update(updatedSc);
+                            mainHandler.post(() ->
+                                    chatAdapter.addSharedContentToCache(updatedSc));
+                        });
+                    }, urlForMeta);
+                } else {
+                    // 其他链接：HTTP 提取元数据
+                    LinkMetadataExtractor.LinkMetadata meta = LinkMetadataExtractor.extract(urlForMeta);
+                    boolean hasTitle = meta.title != null && !meta.title.isEmpty()
+                            && !meta.title.equals(urlForMeta);
+
+                    sc.contentTitle = meta.title;
+                    sc.description = meta.description;
+                    sc.thumbnailUrl = meta.imageUrl;
+                    sc.faviconUrl = meta.faviconUrl;
+                    if (meta.siteName != null) sc.siteName = meta.siteName;
+                    if (meta.fullText != null) sc.fullText = meta.fullText;
+                    if (meta.imageUrls != null && !meta.imageUrls.isEmpty()) {
+                        sc.imageUrlsJson = new com.google.gson.Gson().toJson(meta.imageUrls);
+                    }
+                    db.sharedContentDao().update(sc);
+
+                    if (hasTitle) {
+                        mainHandler.post(() -> chatAdapter.addSharedContentToCache(updatedSc));
+                    } else {
+                        // HTTP 无结果 → WebView 兜底
+                        final String webViewUrl = (meta.resolvedUrl != null) ? meta.resolvedUrl : urlForMeta;
+                        mainHandler.post(() ->
+                            WebViewMetadataExtractor.extract(ChatActivity.this, webViewUrl,
+                                wvMeta -> {
+                                    updatedSc.contentTitle = wvMeta.title;
+                                    updatedSc.description = wvMeta.description;
+                                    updatedSc.thumbnailUrl = wvMeta.imageUrl;
+                                    if (wvMeta.siteName != null) updatedSc.siteName = wvMeta.siteName;
+                                    if (wvMeta.fullText != null) updatedSc.fullText = wvMeta.fullText;
+                                    if (wvMeta.imageUrls != null && !wvMeta.imageUrls.isEmpty()) {
+                                        updatedSc.imageUrlsJson = new com.google.gson.Gson().toJson(wvMeta.imageUrls);
+                                    }
+                                    Executors.newSingleThreadExecutor().execute(() -> {
+                                        db.sharedContentDao().update(updatedSc);
+                                        mainHandler.post(() ->
+                                                chatAdapter.addSharedContentToCache(updatedSc));
+                                    });
+                                }));
+                    }
+                }
+            }
         });
 
         etInput.setText("");
         clearQuote();
+    }
+
+    /**
+     * 从文本中提取 URL。支持完整链接和常见短链域名。
+     */
+    private String extractUrlFromText(String text) {
+        if (text == null) return null;
+        // 完整 http/https 链接
+        if (text.startsWith("http://") || text.startsWith("https://")) {
+            int spaceIdx = text.indexOf(' ');
+            return spaceIdx > 0 ? text.substring(0, spaceIdx) : text;
+        }
+        // 常见短链域名（小红书、抖音、B站等）
+        String[] shortDomains = {"xhslink.com", "xhslink.cn", "b23.tv", "v.douyin.com", "t.cn", "dwz.cn"};
+        for (String domain : shortDomains) {
+            int idx = text.indexOf(domain);
+            if (idx >= 0) {
+                // 向前找到协议或开头
+                int start = idx;
+                while (start > 0 && text.charAt(start - 1) != ' ' && text.charAt(start - 1) != '\n') {
+                    start--;
+                }
+                int end = idx + domain.length();
+                while (end < text.length() && text.charAt(end) != ' ' && text.charAt(end) != '\n') {
+                    end++;
+                }
+                String candidate = text.substring(start, end);
+                if (!candidate.startsWith("http")) {
+                    candidate = "https://" + candidate;
+                }
+                return candidate;
+            }
+        }
+        return null;
     }
 
     private void checkAndGenerateSummaryMemory() {
@@ -1213,6 +1440,12 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void showMessageLongClickMenu(Message msg, View anchorView) {
+        // 多选模式下不显示长按菜单
+        if (isMultiSelectMode) return;
+
+        int singleImgIdx = chatAdapter.consumePendingSingleImageIndex();
+        boolean isSingleImageOp = (singleImgIdx >= 0 && msg.type == 5 && msg.imageUrl != null);
+
         PopupMenu popupMenu = new PopupMenu(this, anchorView);
         popupMenu.getMenu().add(0, 1, 0, "复制");
         popupMenu.getMenu().add(0, 2, 0, "转发");
@@ -1221,45 +1454,97 @@ public class ChatActivity extends AppCompatActivity {
             popupMenu.getMenu().add(0, 4, 0, "撤回");
         }
         popupMenu.getMenu().add(0, 5, 0, "引用");
+        popupMenu.getMenu().add(0, 6, 0, "多选");
         if (msg.type == 0) {
-            popupMenu.getMenu().add(0, 6, 0, "编辑");
+            popupMenu.getMenu().add(0, 7, 0, "编辑");
         }
 
         popupMenu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 1: {
-                    String textToCopy = msg.content;
-                    if (!TextUtils.isEmpty(textToCopy)) {
-                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("message", textToCopy);
-                        clipboard.setPrimaryClip(clip);
-                        Toast.makeText(this, "已复制", Toast.LENGTH_SHORT).show();
+                    if (isSingleImageOp) {
+                        // 复制图片 URL
+                        String[] urls = msg.imageUrl.split(",");
+                        if (singleImgIdx < urls.length) {
+                            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                            ClipData clip = ClipData.newPlainText("image_url", urls[singleImgIdx]);
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(this, "已复制图片路径", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        String textToCopy = msg.content;
+                        if (!TextUtils.isEmpty(textToCopy)) {
+                            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                            ClipData clip = ClipData.newPlainText("message", textToCopy);
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(this, "已复制", Toast.LENGTH_SHORT).show();
+                        }
                     }
                     break;
                 }
                 case 2:
-                    Toast.makeText(this, "转发功能开发中", Toast.LENGTH_SHORT).show();
+                case 6:
+                    enterMultiSelectMode(msg);
                     break;
                 case 3:
-                    Executors.newSingleThreadExecutor().execute(() -> db.messageDao().delete(msg));
+                    if (isSingleImageOp) {
+                        removeImageFromMultiMessage(msg, singleImgIdx);
+                    } else {
+                        Executors.newSingleThreadExecutor().execute(() -> db.messageDao().delete(msg));
+                    }
                     break;
                 case 4:
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        msg.type = 99;
-                        msg.content = "你撤回了一条消息";
-                        db.messageDao().update(msg);
-                    });
+                    if (isSingleImageOp) {
+                        removeImageFromMultiMessage(msg, singleImgIdx);
+                    } else {
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            msg.type = 99;
+                            msg.content = "你撤回了一条消息";
+                            db.messageDao().update(msg);
+                        });
+                    }
                     break;
                 case 5:
                     quoteMessage(msg);
                     break;
-                case 6:
+                case 7:
                     showEditMessageDialog(msg);
                     break;
             }
             return true;
         });
         popupMenu.show();
+    }
+
+    /** 从 type=5 多图消息中移除指定索引的单张图片 */
+    private void removeImageFromMultiMessage(Message msg, int index) {
+        if (msg.type != 5 || msg.imageUrl == null) return;
+        String[] urls = msg.imageUrl.split(",");
+        if (index < 0 || index >= urls.length) return;
+
+        java.util.List<String> newList = new java.util.ArrayList<>();
+        for (int i = 0; i < urls.length; i++) {
+            String u = urls[i].trim();
+            if (i != index && !u.isEmpty()) newList.add(u);
+        }
+
+        if (newList.isEmpty()) {
+            // 从适配器列表中移除该消息（即时 UI 反馈）
+            chatAdapter.clearMultiImageExpandState(msg.id);
+            java.util.List<Message> cur = new java.util.ArrayList<>(chatAdapter.getCurrentMessages());
+            cur.remove(msg);
+            chatAdapter.setMessages(cur);
+            dbExecutor.execute(() -> db.messageDao().deleteById(msg.id));
+        } else {
+            msg.type = newList.size() == 1 ? 3 : 5;
+            msg.imageUrl = android.text.TextUtils.join(",", newList);
+            if (newList.size() == 1) {
+                chatAdapter.clearMultiImageExpandState(msg.id);
+            }
+            // 先更新 UI（同步），再写 DB（异步）
+            chatAdapter.updateMessageImageUrl(msg.id, msg.imageUrl, msg.type);
+            dbExecutor.execute(() -> db.messageDao().update(msg));
+        }
     }
 
     private void showEditMessageDialog(Message msg) {
@@ -1297,6 +1582,149 @@ public class ChatActivity extends AppCompatActivity {
         etInput.setHint("输入消息...");
     }
 
+    // ==================== 多选模式 ====================
+
+    private void enterMultiSelectMode(Message initialMsg) {
+        isMultiSelectMode = true;
+        selectedMessageIds.clear();
+        if (initialMsg != null) {
+            selectedMessageIds.add(initialMsg.id);
+        }
+        chatAdapter.setMultiSelectMode(true, selectedMessageIds);
+        chatAdapter.setOnMessageSelectListener((msg, isSelected) -> updateMultiSelectCount());
+        updateMultiSelectCount();
+        // 切换Toolbar
+        if (getSupportActionBar() != null) getSupportActionBar().hide();
+        if (multiSelectToolbar != null) multiSelectToolbar.setVisibility(View.VISIBLE);
+        // 隐藏输入区域，显示底部多选操作栏
+        if (layoutInputArea != null) layoutInputArea.setVisibility(View.GONE);
+        if (layoutQuotePreview != null) layoutQuotePreview.setVisibility(View.GONE);
+        if (layoutEmojiPanel != null) layoutEmojiPanel.setVisibility(View.GONE);
+        if (layoutFunctionPanel != null) layoutFunctionPanel.setVisibility(View.GONE);
+        if (layoutMultiSelectActions != null) layoutMultiSelectActions.setVisibility(View.VISIBLE);
+        // 关闭软键盘
+        View currentFocus = getCurrentFocus();
+        if (currentFocus != null) {
+            android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.hideSoftInputFromWindow(currentFocus.getWindowToken(), 0);
+        }
+    }
+
+    private void exitMultiSelectMode() {
+        isMultiSelectMode = false;
+        selectedMessageIds.clear();
+        chatAdapter.setMultiSelectMode(false, null);
+        chatAdapter.setOnMessageSelectListener(null);
+        if (multiSelectToolbar != null) multiSelectToolbar.setVisibility(View.GONE);
+        if (getSupportActionBar() != null) getSupportActionBar().show();
+        // 恢复输入区域，隐藏底部多选操作栏
+        if (layoutMultiSelectActions != null) layoutMultiSelectActions.setVisibility(View.GONE);
+        if (layoutInputArea != null) layoutInputArea.setVisibility(View.VISIBLE);
+    }
+
+    private void updateMultiSelectCount() {
+        if (tvSelectedCount != null) {
+            int count = selectedMessageIds.size();
+            tvSelectedCount.setText("已选择 " + count + " 条");
+        }
+    }
+
+    private void startForwardActivity(int mode) {
+        if (selectedMessageIds.isEmpty()) {
+            Toast.makeText(this, "请至少选择一条消息", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent intent = new Intent(this, ForwardTargetActivity.class);
+        intent.putIntegerArrayListExtra("selected_message_ids", new ArrayList<>(selectedMessageIds));
+        intent.putExtra("source_session_id", sessionId);
+        intent.putExtra("source_character_id", currentCharacter != null ? currentCharacter.id : 0);
+        intent.putExtra("friend_name", friendName);
+        intent.putExtra("forward_mode", mode);
+        startActivity(intent);
+        exitMultiSelectMode();
+    }
+
+    private void deleteSelectedMessages() {
+        if (selectedMessageIds.isEmpty()) return;
+        new AlertDialog.Builder(this)
+                .setTitle("删除消息")
+                .setMessage("确定删除选中的 " + selectedMessageIds.size() + " 条消息吗？")
+                .setPositiveButton("删除", (dialog, which) -> {
+                    // 复制到局部变量，防止 exitMultiSelectMode 清空 set
+                    final List<Integer> idsToDelete = new ArrayList<>(selectedMessageIds);
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        for (int msgId : idsToDelete) {
+                            Message msg = db.messageDao().getMessageByIdSync(msgId);
+                            if (msg != null) {
+                                db.messageDao().delete(msg);
+                            }
+                        }
+                    });
+                    exitMultiSelectMode();
+                    Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void setupMultiSelectToolbar() {
+        if (multiSelectToolbar == null) return;
+        multiSelectToolbar.setNavigationOnClickListener(v -> exitMultiSelectMode());
+    }
+
+    // ==================== 多选模式结束 ====================
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // 处理新的分享内容
+        int sharedContentId = intent.getIntExtra("shared_content_id", 0);
+        if (sharedContentId > 0) {
+            new Handler().postDelayed(() -> requestAiReplyWithSharedContent(sharedContentId), 500);
+        }
+    }
+
+    private void requestAiReplyWithSharedContent(int sharedContentId) {
+        if (currentCharacter == null) {
+            Toast.makeText(this, "正在加载角色信息，请稍后再试", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
+        if (TextUtils.isEmpty(apiKey)) {
+            Toast.makeText(this, "请先在桌面的设置应用中配置 OpenAI API KEY", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("对方正在输入中...");
+        }
+        Intent serviceIntent = new Intent(this, com.yoyo.jingxi.service.AiReplyService.class);
+        serviceIntent.setAction(com.yoyo.jingxi.service.AiReplyService.ACTION_START_REPLY);
+        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_SESSION_ID, sessionId);
+        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_CHARACTER_ID, currentCharacter.id);
+        serviceIntent.putExtra(com.yoyo.jingxi.service.AiReplyService.EXTRA_SHARED_CONTENT_ID, sharedContentId);
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            android.util.Log.e("ChatActivity", "Failed to start AiReplyService with shared content", e);
+            try {
+                startService(serviceIntent);
+            } catch (Exception e2) {
+                android.util.Log.e("ChatActivity", "startService also failed", e2);
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(friendName != null ? friendName : "聊天");
+                }
+                btnSend.setEnabled(true);
+                return;
+            }
+        }
+        btnSend.setEnabled(false);
+    }
+
     private void requestAiReply() {
         if (currentCharacter == null) {
             Toast.makeText(this, "正在加载角色信息，请稍后再试", Toast.LENGTH_SHORT).show();
@@ -1321,8 +1749,20 @@ public class ChatActivity extends AppCompatActivity {
             try {
                 startForegroundService(serviceIntent);
             } catch (Exception e) {
-                android.util.Log.e("ChatActivity", "Failed to start foreground service", e);
-                startService(serviceIntent);
+                // Android 12+ 后台启动前台服务限制：回退到 startService()
+                // AiReplyService.onStartCommand 已无条件调用 startForeground()，回退安全
+                android.util.Log.w("ChatActivity", "startForegroundService failed, falling back to startService: " + e.getMessage());
+                try {
+                    startService(serviceIntent);
+                } catch (Exception e2) {
+                    android.util.Log.e("ChatActivity", "startService also failed", e2);
+                    Toast.makeText(this, "无法在后台启动AI回复，请保持应用在前台", Toast.LENGTH_SHORT).show();
+                    if (getSupportActionBar() != null) {
+                        getSupportActionBar().setTitle(friendName != null ? friendName : "聊天");
+                    }
+                    btnSend.setEnabled(true);
+                    return;
+                }
             }
         } else {
             startService(serviceIntent);

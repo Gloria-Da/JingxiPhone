@@ -282,7 +282,7 @@ public class ChatSettingsActivity extends AppCompatActivity {
                 int padding = (int) (12 * getResources().getDisplayMetrics().density);
                 for (int i = 0; i < enabledEntries.size(); i++) {
                     WorldbookEntry entry = enabledEntries.get(i);
-                    String typeStr = entry.type == 0 ? "[前]" : (entry.type == 1 ? "[中]" : "[后]");
+                    String typeStr = entry.type == 0 ? "[世界观]" : (entry.type == 1 ? "[触发]" : "[规则约束]");
                     String title = typeStr + " " + (entry.title != null && !entry.title.isEmpty() ? entry.title : "未命名");
                     
                     android.widget.CheckBox checkBox = new android.widget.CheckBox(this);

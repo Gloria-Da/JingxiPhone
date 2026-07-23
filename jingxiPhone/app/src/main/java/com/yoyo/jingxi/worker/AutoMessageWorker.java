@@ -68,6 +68,7 @@ public class AutoMessageWorker extends Worker {
 
         long currentTime = System.currentTimeMillis();
         boolean anyRetry = false;
+        boolean didSend = false;
 
         for (ChatSession session : sessions) {
             // 如果总开关被关闭，但由于某些原因worker还在运行，确保不再发消息
@@ -100,6 +101,15 @@ public class AutoMessageWorker extends Worker {
             long idleTimeMs = currentTime - lastMsg.timestamp;
             if (idleTimeMs < minIdleTimeMs) {
                 Log.d(TAG, "Session " + session.id + " is too recent. Idle time: " + (idleTimeMs / 1000 / 60) + " mins, needs " + (minIdleTimeMs / 1000 / 60) + " mins.");
+                continue;
+            }
+
+            // 检查上次AI拒绝时间，冷却期内跳过（避免每15分钟重复询问浪费token）
+            long lastRefusalTime = SpUtils.getLong("AUTO_MSG_LAST_REFUSAL_TIME_" + session.id, 0L);
+            if (lastRefusalTime > 0 && (currentTime - lastRefusalTime) < minIdleTimeMs) {
+                Log.d(TAG, "Session " + session.id + " is in cooldown after AI refusal. "
+                    + (currentTime - lastRefusalTime) / 1000 / 60 + " mins since refusal, needs "
+                    + minIdleTimeMs / 1000 / 60 + " mins. Skipping.");
                 continue;
             }
 
@@ -136,6 +146,10 @@ public class AutoMessageWorker extends Worker {
                     boolean shouldSend = resultObj.optBoolean("should_send", false);
 
                     if (shouldSend) {
+                        // 设置冷却时间（避免 Worker 重试时重复询问）
+                        SpUtils.putLong("AUTO_MSG_LAST_REFUSAL_TIME_" + session.id, currentTime);
+                        SpUtils.putString("AUTO_MSG_LAST_REFUSAL_REASON_" + session.id, "");
+                        didSend = true;
                         Log.d(TAG, "AI decided to send a message. Using AiReplyHelper...");
                         String reason = resultObj.optString("reason", "");
                         String actionType = resultObj.optString("action_type", "text");
@@ -207,7 +221,11 @@ public class AutoMessageWorker extends Worker {
                         // 为了避免短时间内给多个角色群发，主动发送一次后就结束此次 Worker
                         break;
                     } else {
-                        Log.d(TAG, "AI decided NOT to send a message. Reason: " + resultObj.optString("reason"));
+                        String refusalReason = resultObj.optString("reason", "");
+                        Log.d(TAG, "AI decided NOT to send a message. Reason: " + refusalReason);
+                        // 记录拒绝时间，冷却期内不再询问（避免每15分钟重复消耗token）
+                        SpUtils.putLong("AUTO_MSG_LAST_REFUSAL_TIME_" + session.id, currentTime);
+                        SpUtils.putString("AUTO_MSG_LAST_REFUSAL_REASON_" + session.id, refusalReason);
                     }
                 } else {
                     Log.w(TAG, "AI response failed. Code: " + response.code() + " msg: " + response.message());
@@ -222,7 +240,7 @@ public class AutoMessageWorker extends Worker {
             }
         }
 
-        return anyRetry ? Result.retry() : Result.success();
+        return (!didSend && anyRetry) ? Result.retry() : Result.success();
     }
 
     private OpenAiRequest buildAutoMessageDecisionRequest(String persona, String myName, String scheduleContent, List<Message> history, long idleTimeMs, String nationality, String location) {

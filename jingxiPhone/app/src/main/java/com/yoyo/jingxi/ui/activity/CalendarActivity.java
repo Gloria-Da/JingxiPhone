@@ -195,6 +195,46 @@ public class CalendarActivity extends AppCompatActivity {
         super.onResume();
         refreshDayMarkers();
         loadDayDetail();
+        checkPeriodDailyPopup();
+    }
+
+    /**
+     * 经期期间每天首次进入日历时弹窗询问是否记录经期详情。
+     */
+    private void checkPeriodDailyPopup() {
+        String todayStr = dateFormat.format(new java.util.Date());
+        String shownDate = SpUtils.getString("PERIOD_POPUP_SHOWN_DATE", "");
+        if (todayStr.equals(shownDate)) return; // 今天已弹过
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            CycleRecord cr = cycleDao.getPeriodOnDate(todayStr);
+            if (cr == null) return;
+            // 计算是第几天
+            int dayNum = 1;
+            try {
+                java.util.Date start = dateFormat.parse(cr.startDate);
+                java.util.Date today = dateFormat.parse(todayStr);
+                long diff = today.getTime() - start.getTime();
+                dayNum = (int) (diff / (1000 * 60 * 60 * 24)) + 1;
+            } catch (Exception ignored) {}
+
+            final int finalDay = dayNum;
+            android.os.Handler mainHandler = new android.os.Handler(getMainLooper());
+            mainHandler.post(() -> {
+                SpUtils.putString("PERIOD_POPUP_SHOWN_DATE", todayStr);
+                new AlertDialog.Builder(CalendarActivity.this)
+                    .setTitle("经期关怀")
+                    .setMessage("今天是经期第" + finalDay + "天，要记录今天的经期状况吗？")
+                    .setPositiveButton("去记录", (dialog, which) -> {
+                        Intent intent = new Intent(CalendarActivity.this, CycleEditActivity.class);
+                        intent.putExtra("date", todayStr);
+                        if (cr.id > 0) intent.putExtra("recordId", cr.id);
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("不需要", null)
+                    .show();
+            });
+        });
     }
 
     private MonthCalendarView getCurrentMonthView() {
@@ -956,6 +996,12 @@ public class CalendarActivity extends AppCompatActivity {
         for (CycleRecord cr : cycles) {
             try {
                 java.util.Date s = sdf.parse(cr.startDate), e = sdf.parse(cr.endDate);
+                // 对于未结束的经期（endDate == startDate），扩展到今天以便连续显示
+                if (cr.endDate != null && cr.endDate.equals(cr.startDate)) {
+                    String todayStr = sdf.format(new java.util.Date());
+                    java.util.Date today = sdf.parse(todayStr);
+                    if (today.after(e)) e = today;
+                }
                 Calendar cal = Calendar.getInstance(); cal.setTime(s);
                 while (!cal.getTime().after(e)) { pSet.add(sdf.format(cal.getTime())); cal.add(Calendar.DAY_OF_MONTH, 1); }
             } catch (Exception ignored) {}
@@ -963,9 +1009,10 @@ public class CalendarActivity extends AppCompatActivity {
         if (prediction != null) {
             try {
                 Calendar cal = Calendar.getInstance();
-                java.util.Date es = sdf.parse(prediction.earliestStart), le = sdf.parse(prediction.latestEnd);
+                // 预测经期显示：从最早可能开始到最早可能结束（最可能区间），而非整个不确定性窗口
+                java.util.Date es = sdf.parse(prediction.earliestStart), ee = sdf.parse(prediction.earliestEnd);
                 cal.setTime(es);
-                while (!cal.getTime().after(le)) { String ds = sdf.format(cal.getTime()); if (!pSet.contains(ds)) ppSet.add(ds); cal.add(Calendar.DAY_OF_MONTH, 1); }
+                while (!cal.getTime().after(ee)) { String ds = sdf.format(cal.getTime()); if (!pSet.contains(ds)) ppSet.add(ds); cal.add(Calendar.DAY_OF_MONTH, 1); }
                 java.util.Date os = sdf.parse(prediction.ovulationStart), oe = sdf.parse(prediction.ovulationEnd);
                 cal.setTime(os);
                 while (!cal.getTime().after(oe)) { ovSet.add(sdf.format(cal.getTime())); cal.add(Calendar.DAY_OF_MONTH, 1); }
@@ -1071,7 +1118,7 @@ public class CalendarActivity extends AppCompatActivity {
 
     private void markPeriodStart(String ds) {
         Executors.newSingleThreadExecutor().execute(() -> {
-            CycleRecord r = new CycleRecord(); r.startDate = ds; r.endDate = ds; r.flowLevel = 2;
+            CycleRecord r = new CycleRecord(); r.startDate = ds; r.endDate = ds;
             cycleDao.insert(r);
             runOnUiThread(() -> { Toast.makeText(this, "已标记经期开始: " + ds, Toast.LENGTH_SHORT).show(); refreshDayMarkers(); loadDayDetail(); });
         });

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFF">
+    <!-- 扬声器主体 -->
+    <path
+        android:pathData="M3,9v6h4l5,5V4L7,9H3z"
+        android:fillColor="#FFFFFF"/>
+    <!-- 外放声波（两道弧线） -->
+    <path
+        android:pathData="M16,7.5c2,1.5 3,4 3,7s-1,5.5-3,7"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"/>
+    <path
+        android:pathData="M19,4.5c3,2.5 4.5,6 4.5,10s-1.5,7.5-4.5,10"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="@android:color/transparent"/>
+</vector>

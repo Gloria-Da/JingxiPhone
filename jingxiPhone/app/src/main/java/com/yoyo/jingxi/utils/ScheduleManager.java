@@ -146,6 +146,23 @@ public class ScheduleManager {
                 }
                 extraContext.append("\n");
             }
+
+            // Fetch worldbook entries
+            java.util.List<com.yoyo.jingxi.data.entity.WorldbookEntry> wbEntries = db.worldbookDao().getAllEnabledEntriesSync();
+            if (wbEntries != null && !wbEntries.isEmpty()) {
+                StringBuilder preWb = new StringBuilder();
+                StringBuilder midWb = new StringBuilder();
+                StringBuilder postWb = new StringBuilder();
+                for (com.yoyo.jingxi.data.entity.WorldbookEntry e : wbEntries) {
+                    if (e.content == null || e.content.isEmpty()) continue;
+                    if (e.type == 0) preWb.append(e.content).append("\n");
+                    else if (e.type == 1) midWb.append(e.content).append("\n");
+                    else if (e.type == 2) postWb.append(e.content).append("\n");
+                }
+                if (preWb.length() > 0) extraContext.append("【前置世界书设定】\n").append(preWb.toString()).append("\n");
+                if (midWb.length() > 0) extraContext.append("【中置世界书/记忆补充】\n(以下内容由当前对话触发，请参考以做出回应)\n").append(midWb.toString()).append("\n");
+                if (postWb.length() > 0) extraContext.append("【后置世界书/终极规则约束】\n(以下规则是极高优先级，必须严格遵守)\n").append(postWb.toString()).append("\n\n");
+            }
         }
 
         Random random = new Random();
@@ -360,7 +377,24 @@ public class ScheduleManager {
                     }
                     extraContext.append("\n");
                 }
-                
+
+                // Fetch worldbook entries
+                java.util.List<com.yoyo.jingxi.data.entity.WorldbookEntry> wbEntries = db.worldbookDao().getAllEnabledEntriesSync();
+                if (wbEntries != null && !wbEntries.isEmpty()) {
+                    StringBuilder preWb = new StringBuilder();
+                    StringBuilder midWb = new StringBuilder();
+                    StringBuilder postWb = new StringBuilder();
+                    for (com.yoyo.jingxi.data.entity.WorldbookEntry e : wbEntries) {
+                        if (e.content == null || e.content.isEmpty()) continue;
+                        if (e.type == 0) preWb.append(e.content).append("\n");
+                        else if (e.type == 1) midWb.append(e.content).append("\n");
+                        else if (e.type == 2) postWb.append(e.content).append("\n");
+                    }
+                    if (preWb.length() > 0) extraContext.append("【前置世界书设定】\n").append(preWb.toString()).append("\n");
+                    if (midWb.length() > 0) extraContext.append("【中置世界书/记忆补充】\n(以下内容由当前对话触发，请参考以做出回应)\n").append(midWb.toString()).append("\n");
+                    if (postWb.length() > 0) extraContext.append("【后置世界书/终极规则约束】\n(以下规则是极高优先级，必须严格遵守)\n").append(postWb.toString()).append("\n\n");
+                }
+
                 mainHandler.post(() -> proceedWithGenerate(db, character, apiKey, finalUrl, model, currentDateTime, extraContext.toString(), callback));
             }).start();
         } else {

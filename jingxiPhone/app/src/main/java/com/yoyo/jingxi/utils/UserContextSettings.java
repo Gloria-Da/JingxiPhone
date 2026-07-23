@@ -23,7 +23,8 @@ public class UserContextSettings {
      * 单个类别的权限配置。
      */
     public static class CategoryConfig {
-        public boolean enabled;
+        public boolean enabled;        // 读取权限
+        public boolean writeEnabled;   // 写入权限（AI能否修改此类数据，默认false）
         public List<Integer> characterIds = new ArrayList<>();
         public String persona = ""; // 空字符串 = 主人设
 
@@ -96,6 +97,34 @@ public class UserContextSettings {
             if (!cfg.persona.equals(pn)) return false;
         }
         return true;
+    }
+
+    /**
+     * 检查指定类别是否允许 AI 写入（修改数据）。
+     * 与 isEnabled 使用相同的角色/人设过滤规则，但检查 writeEnabled 而非 enabled。
+     *
+     * @param category    "calendar" / "period" / "course"
+     * @param characterId AI 角色 ID
+     * @param personaName 当前使用的人设名（可为 null）
+     * @return true 如果 AI 可以修改此类别的数据
+     */
+    public boolean canWrite(String category, int characterId, String personaName) {
+        CategoryConfig cfg = configs.get(category);
+        if (cfg == null || !cfg.writeEnabled) return false;
+        if (cfg.characterIds == null || !cfg.characterIds.contains(characterId)) return false;
+
+        if (!cfg.persona.isEmpty()) {
+            String pn = personaName != null ? personaName : "";
+            if (!cfg.persona.equals(pn)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * 设置指定类别的写入权限是否启用。
+     */
+    public void setWriteEnabled(String category, boolean enabled) {
+        getConfig(category).writeEnabled = enabled;
     }
 
     /**

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:background="#1C1C1E"> <!-- 深色背景 -->
+    android:background="@drawable/bg_call_gradient">
 
     <!-- 顶部区域：包含悬浮窗按钮和头像状态 -->
     <FrameLayout
@@ -16,13 +16,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:paddingTop="60dp"
+            android:paddingTop="80dp"
             android:paddingBottom="24dp">
 
         <ImageView
             android:id="@+id/ivCallAvatar"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:elevation="8dp"
             android:src="@drawable/ic_launcher_round"
             android:scaleType="centerCrop" />
 
@@ -34,7 +35,8 @@
             android:text="联系人名称"
             android:textSize="28sp"
             android:textColor="@color/white"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:letterSpacing="0.05" />
 
         <TextView
             android:id="@+id/tvCallStatus"
@@ -43,8 +45,8 @@
             android:layout_marginTop="12dp"
             android:text="正在呼叫..."
             android:textSize="16sp"
-            android:textColor="#A0A0A0" />
-            
+            android:textColor="#B0B0B0" />
+
         <TextView
             android:id="@+id/tvCallDuration"
             android:layout_width="wrap_content"
@@ -52,7 +54,8 @@
             android:layout_marginTop="8dp"
             android:text="00:00"
             android:textSize="16sp"
-            android:textColor="#A0A0A0"
+            android:textColor="#B0B0B0"
+            android:fontFamily="monospace"
             android:visibility="gone" />
 
         </LinearLayout>
@@ -60,14 +63,14 @@
         <!-- 最小化按钮 -->
         <ImageView
             android:id="@+id/ivMinimize"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_gravity="start|top"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="40dp"
-            android:padding="12dp"
-            android:src="@android:drawable/ic_menu_crop"
-            app:tint="#A0A0A0"
+            android:layout_marginTop="44dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_call_minimize"
+            app:tint="#B0B0B0"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:elevation="10dp" />
 
@@ -91,7 +94,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingBottom="60dp"
+        android:paddingBottom="70dp"
         android:paddingTop="20dp">
 
         <!-- 拒绝接听 / 挂断 -->
@@ -104,12 +107,12 @@
             android:gravity="center">
 
             <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:background="@drawable/bg_btn_rounded"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_call_hangup"
+                android:background="@drawable/bg_call_btn_glass"
                 android:backgroundTint="#FF3B30"
-                android:padding="16dp" />
+                android:padding="18dp" />
 
             <TextView
                 android:id="@+id/tvHangUpText"
@@ -117,7 +120,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="挂断"
-                android:textColor="@color/text_gray"
+                android:textColor="#B0B0B0"
                 android:textSize="14sp" />
         </LinearLayout>
 
@@ -132,22 +135,52 @@
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@android:drawable/ic_menu_call"
-                android:background="@drawable/bg_btn_rounded"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_call_hangup"
+                android:background="@drawable/bg_call_btn_glass"
                 android:backgroundTint="#34C759"
-                android:padding="16dp" />
+                android:padding="18dp"
+                android:rotation="135" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="接听"
-                android:textColor="@color/text_gray"
+                android:textColor="#B0B0B0"
                 android:textSize="14sp" />
         </LinearLayout>
         
+        <!-- 免提/听筒切换（接通后显示） -->
+        <LinearLayout
+            android:id="@+id/btnSpeaker"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/ivSpeakerIcon"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_handset"
+                android:background="@drawable/bg_call_btn_glass"
+                android:backgroundTint="#888888"
+                android:padding="18dp" />
+
+            <TextView
+                android:id="@+id/tvSpeakerText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="听筒"
+                android:textColor="#B0B0B0"
+                android:textSize="14sp" />
+        </LinearLayout>
+
         <!-- 麦克风开关（接通后显示） -->
         <LinearLayout
             android:id="@+id/btnSpeak"
@@ -160,12 +193,12 @@
 
             <ImageView
                 android:id="@+id/ivSpeakIcon"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@android:drawable/ic_btn_speak_now"
-                android:background="@drawable/bg_btn_rounded"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_call_mic"
+                android:background="@drawable/bg_call_btn_glass"
                 android:backgroundTint="@color/main_brown"
-                android:padding="16dp" />
+                android:padding="18dp" />
 
             <TextView
                 android:id="@+id/tvSpeakText"
@@ -173,7 +206,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="麦克风已开"
-                android:textColor="#A0A0A0"
+                android:textColor="#B0B0B0"
                 android:textSize="14sp" />
         </LinearLayout>
 

@@ -144,7 +144,9 @@ public class CycleEditActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
 
         // Flow level
-        if (record.flowLevel == 1) rgFlowLevel.check(R.id.rbLight);
+        if (record.flowLevel == null) {
+            rgFlowLevel.clearCheck();
+        } else if (record.flowLevel == 1) rgFlowLevel.check(R.id.rbLight);
         else if (record.flowLevel == 3) rgFlowLevel.check(R.id.rbHeavy);
         else rgFlowLevel.check(R.id.rbMedium);
 
@@ -184,7 +186,8 @@ public class CycleEditActivity extends AppCompatActivity {
         int checkedId = rgFlowLevel.getCheckedRadioButtonId();
         if (checkedId == R.id.rbLight) record.flowLevel = 1;
         else if (checkedId == R.id.rbHeavy) record.flowLevel = 3;
-        else record.flowLevel = 2;
+        else if (checkedId == R.id.rbMedium) record.flowLevel = 2;
+        else record.flowLevel = null;  // 未选择时为 null
 
         // Symptoms
         List<String> symptoms = new ArrayList<>();

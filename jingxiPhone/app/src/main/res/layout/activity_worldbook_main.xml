@@ -30,7 +30,7 @@
             android:layout_weight="1"
             android:padding="16dp"
             android:gravity="center"
-            android:text="前世界书"
+            android:text="世界观设定"
             android:textStyle="bold"
             android:textColor="?attr/colorTextPrimary"
             android:background="?attr/selectableItemBackground" />
@@ -42,7 +42,7 @@
             android:layout_weight="1"
             android:padding="16dp"
             android:gravity="center"
-            android:text="中世界书"
+            android:text="触发设定"
             android:textColor="?attr/colorTextSecondary"
             android:background="?attr/selectableItemBackground" />
 
@@ -53,7 +53,7 @@
             android:layout_weight="1"
             android:padding="16dp"
             android:gravity="center"
-            android:text="后世界书"
+            android:text="回复规则约束"
             android:textColor="?attr/colorTextSecondary"
             android:background="?attr/selectableItemBackground" />
     </LinearLayout>

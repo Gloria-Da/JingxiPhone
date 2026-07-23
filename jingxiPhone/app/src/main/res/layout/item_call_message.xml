@@ -34,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="10:00:00"
-            android:textColor="@color/text_gray"
+            android:textColor="#999999"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -54,8 +54,8 @@
         android:layout_marginTop="8dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@drawable/bg_btn_rounded"
-        android:backgroundTint="#E0E0E0"
+        android:background="@drawable/bg_call_btn_glass"
+        android:backgroundTint="#30FFFFFF"
         android:paddingHorizontal="12dp"
         android:paddingVertical="6dp"
         android:visibility="gone">
@@ -68,6 +68,7 @@
             app:tint="?attr/colorTextPrimary" />
             
         <TextView
+            android:id="@+id/tvPlayLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"

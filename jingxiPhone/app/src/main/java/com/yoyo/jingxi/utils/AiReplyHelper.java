@@ -23,6 +23,10 @@ import java.net.SocketTimeoutException;
 public class AiReplyHelper {
 
     public static void requestAiReplySynchronous(Context context, int sessionId, int characterId, String autoReason) {
+        requestAiReplySynchronous(context, sessionId, characterId, autoReason, 0);
+    }
+
+    public static void requestAiReplySynchronous(Context context, int sessionId, int characterId, String autoReason, int sharedContentId) {
         AppDatabase db = AppDatabase.getDatabase(context);
         OpenAIManager aiManager = new OpenAIManager();
 
@@ -70,6 +74,113 @@ public class AiReplyHelper {
             int historyRounds = SpUtils.getInt("SETTING_HISTORY_ROUNDS", 80);
             java.util.List<com.yoyo.jingxi.data.entity.Message> history = db.messageDao().getRecentMessagesBySessionIdSync(sessionId, historyRounds * 2);
             java.util.Collections.reverse(history);
+
+            // 多模态内容映射：messageId → (String or List<ContentPart>)
+            java.util.Map<Integer, Object> richContentMap = new java.util.HashMap<>();
+
+            // 预处理分享内容消息（type=7）：加载SharedContent并格式化内容为AI可理解的文本
+            for (com.yoyo.jingxi.data.entity.Message msg : history) {
+                if (msg.type == 7) {
+                    com.yoyo.jingxi.data.entity.SharedContent sc = db.sharedContentDao().getByMessageId(msg.id);
+                    if (sc == null) {
+                        // 兜底：SharedContent 可能还未创建（时序问题），现场提取
+                        String url = extractUrlFromText(msg.content);
+                        if (url != null) {
+                            com.yoyo.jingxi.utils.LinkMetadataExtractor.LinkMetadata meta =
+                                    com.yoyo.jingxi.utils.LinkMetadataExtractor.extract(url);
+                            sc = new com.yoyo.jingxi.data.entity.SharedContent();
+                            sc.sourceUrl = url;
+                            sc.siteName = meta.siteName;
+                            sc.faviconUrl = meta.faviconUrl;
+                            sc.contentTitle = meta.title;
+                            sc.thumbnailUrl = meta.imageUrl;
+                            sc.description = meta.description;
+                            sc.timestamp = System.currentTimeMillis();
+                            sc.sessionId = sessionId;
+                            sc.characterId = characterId;
+                            sc.messageId = msg.id;
+                            try { sc.id = (int) db.sharedContentDao().insert(sc); } catch (Exception e) {}
+                        }
+                    }
+                    if (sc != null) {
+                        // 小红书占位数据兜底：当场爬取
+                        boolean isXhsPlaceholder = (sc.fullText == null || sc.fullText.isEmpty())
+                                && (sc.sourceUrl != null)
+                                && (sc.sourceUrl.contains("xhslink.com")
+                                    || sc.sourceUrl.contains("xhslink.cn")
+                                    || sc.sourceUrl.contains("xiaohongshu.com"));
+                        if (isXhsPlaceholder) {
+                            com.yoyo.jingxi.utils.LinkMetadataExtractor.LinkMetadata xhsMeta =
+                                    com.yoyo.jingxi.utils.XiaohongshuCrawler.doCrawl(sc.sourceUrl);
+                            if (xhsMeta.title != null) sc.contentTitle = xhsMeta.title;
+                            if (xhsMeta.fullText != null) sc.fullText = xhsMeta.fullText;
+                            if (xhsMeta.description != null) sc.description = xhsMeta.description;
+                            if (xhsMeta.imageUrls != null && !xhsMeta.imageUrls.isEmpty()) {
+                                sc.imageUrlsJson = new com.google.gson.Gson().toJson(xhsMeta.imageUrls);
+                            }
+                            try { db.sharedContentDao().update(sc); } catch (Exception e) {}
+                        }
+
+                        java.util.List<String> imgUrls = parseImageUrls(sc.imageUrlsJson);
+                        boolean hasFullContent = (sc.fullText != null && !sc.fullText.isEmpty())
+                                || (imgUrls != null && !imgUrls.isEmpty());
+
+                        if (hasFullContent) {
+                            java.util.List<com.yoyo.jingxi.network.OpenAiRequest.ContentPart> parts =
+                                    new java.util.ArrayList<>();
+
+                            StringBuilder textPart = new StringBuilder();
+                            textPart.append("[用户分享了来自")
+                                    .append(sc.siteName != null ? sc.siteName : "网页")
+                                    .append("的链接]\n");
+                            textPart.append("标题: ")
+                                    .append(sc.contentTitle != null ? sc.contentTitle : "无标题")
+                                    .append("\n");
+                            if (sc.fullText != null && !sc.fullText.isEmpty()) {
+                                textPart.append("正文内容:\n").append(sc.fullText).append("\n");
+                            } else if (sc.description != null && !sc.description.isEmpty()) {
+                                textPart.append("描述: ").append(sc.description).append("\n");
+                            }
+                            textPart.append("链接: ").append(sc.sourceUrl).append("\n");
+                            if (imgUrls != null && !imgUrls.isEmpty()) {
+                                textPart.append("[此链接包含 ").append(imgUrls.size())
+                                        .append(" 张图片，见下方]");
+                            }
+                            parts.add(com.yoyo.jingxi.network.OpenAiRequest.ContentPart
+                                    .text(textPart.toString()));
+
+                            if (imgUrls != null) {
+                                int maxImgs = Math.min(imgUrls.size(), 9);
+                                for (int i = 0; i < maxImgs; i++) {
+                                    String b64 = downloadImageAsBase64(imgUrls.get(i));
+                                    if (b64 != null) {
+                                        parts.add(com.yoyo.jingxi.network.OpenAiRequest.ContentPart
+                                                .imageUrl(b64));
+                                    }
+                                }
+                            }
+
+                            richContentMap.put(msg.id, parts);
+                            // 同时保留纯文本版本给非多模态场景
+                            msg.content = textPart.toString();
+                        } else {
+                            StringBuilder sb = new StringBuilder();
+                            sb.append("[用户分享了来自")
+                                    .append(sc.siteName != null ? sc.siteName : "网页")
+                                    .append("的链接]\n");
+                            sb.append("标题: ")
+                                    .append(sc.contentTitle != null ? sc.contentTitle : "无标题")
+                                    .append("\n");
+                            if (sc.description != null && !sc.description.isEmpty()) {
+                                sb.append("描述: ").append(sc.description).append("\n");
+                            }
+                            sb.append("链接: ").append(sc.sourceUrl).append("\n");
+                            sb.append("[请基于以上信息回复用户关于此链接的讨论，你可以假设自己已查看了该链接的内容]");
+                            msg.content = sb.toString();
+                        }
+                    }
+                }
+            }
 
             com.yoyo.jingxi.data.entity.MyPersona myPersona = db.myPersonaDao().getMyPersonaByName(session.myPersonaName);
             String myName = myPersona != null ? myPersona.name : SpUtils.getString("MY_NAME", "我");
@@ -221,7 +332,7 @@ public class AiReplyHelper {
                 character.persona, history, myName, myPersonaDesc, model,
                 importantMemories, normalMemories, new java.util.ArrayList<>(), scheduleContent, worldbookEntries,
                 emojiEntries, false, relationshipContent, maxAiMessages, momentsContent, autoReason, weatherContext, memoryV2Context,
-                character.nationality, character.location);
+                character.nationality, character.location, richContentMap);
 
             // 网络二次检测（构建请求耗时较长，网络状态可能已变化）
             if (!isNetworkAvailable(context)) {
@@ -263,7 +374,7 @@ public class AiReplyHelper {
                 && !response.body().choices.isEmpty()) {
                 String rawContent = response.body().choices.get(0).message.content;
 
-                handleAiReplies(context, aiManager, db, sessionId, character, rawContent);
+                handleAiReplies(context, aiManager, db, sessionId, character, rawContent, currentPersonaName);
 
                 broadcastReplyStatus(context, false);
             } else {
@@ -301,7 +412,7 @@ public class AiReplyHelper {
         context.sendBroadcast(updateIntent);
     }
 
-    private static void handleAiReplies(Context context, OpenAIManager aiManager, AppDatabase db, int sessionId, Character character, String rawContent) {
+    private static void handleAiReplies(Context context, OpenAIManager aiManager, AppDatabase db, int sessionId, Character character, String rawContent, String myPersonaName) {
         java.util.List<com.yoyo.jingxi.network.OpenAIManager.ReplyItem> replies = aiManager.parseMultiReplies(rawContent);
         
         long baseTime = System.currentTimeMillis();
@@ -354,17 +465,31 @@ public class AiReplyHelper {
                 "memory_note".equalsIgnoreCase(item.type) ||
                 "memo".equalsIgnoreCase(item.type) ||
                 "calendar_event".equalsIgnoreCase(item.type) ||
+                "cycle_record".equalsIgnoreCase(item.type) ||
                 "moment".equalsIgnoreCase(item.type) || "moment_interaction".equalsIgnoreCase(item.type)) {
 
                 // 收集 calendar_event 用于后续处理
                 if ("calendar_event".equalsIgnoreCase(item.type)) {
                     calendarActions.add(item);
                 }
+                // 立即处理 cycle_record
+                if ("cycle_record".equalsIgnoreCase(item.type)) {
+                    processCycleAction(db, item, character.id, myPersonaName);
+                }
                 continue;
             }
             
             if (("text".equalsIgnoreCase(item.type) || item.type == null) && (item.content == null || item.content.trim().isEmpty())) {
                 continue; // 过滤掉空消息，防止出现空闲气泡
+            }
+
+            // 防御：如果 content 看起来像 virtual_image 的描述 JSON，自动修正类型（纵深兜底）
+            if (("text".equalsIgnoreCase(item.type) || item.type == null)
+                && item.content != null
+                && item.content.trim().startsWith("{")
+                && item.content.contains("\"desc\"")
+                && item.content.contains("\"size\"")) {
+                item.type = "virtual_image";
             }
 
             com.yoyo.jingxi.data.entity.Message msg = new com.yoyo.jingxi.data.entity.Message();
@@ -382,7 +507,33 @@ public class AiReplyHelper {
                 msg.content = item.content;
             } else if ("virtual_image".equalsIgnoreCase(item.type)) {
                 msg.type = 4;
-                msg.imageDesc = item.content;
+                String rawDesc = item.content;
+                if (rawDesc != null) {
+                    rawDesc = rawDesc.trim();
+                    // 校验并修复 imageDesc JSON，防止AI返回的格式错误导致显示异常
+                    try {
+                        org.json.JSONObject json = new org.json.JSONObject(rawDesc);
+                        if (!json.has("desc")) json.put("desc", rawDesc);
+                        if (!json.has("size")) json.put("size", "1024x1792");
+                        String sz = json.optString("size", "1024x1792");
+                        if (!sz.equals("1024x1024") && !sz.equals("1024x1792") && !sz.equals("1792x1024")) {
+                            json.put("size", "1024x1792");
+                        }
+                        rawDesc = json.toString();
+                    } catch (Exception e) {
+                        android.util.Log.w("AiReplyHelper", "virtual_image content is not valid JSON, wrapping: "
+                            + rawDesc.substring(0, Math.min(100, rawDesc.length())));
+                        try {
+                            org.json.JSONObject json = new org.json.JSONObject();
+                            json.put("desc", rawDesc);
+                            json.put("size", "1024x1792");
+                            rawDesc = json.toString();
+                        } catch (Exception ex) {
+                            rawDesc = "{\"desc\":\"一张图片\",\"size\":\"1024x1792\"}";
+                        }
+                    }
+                }
+                msg.imageDesc = rawDesc;
                 msg.content = "[虚拟图片]";
             } else {
                 msg.type = 0;
@@ -414,7 +565,9 @@ public class AiReplyHelper {
             hasNewMessage = true;
             newMessageCount++;
             if (msg.type == 0 || msg.type == 2) {
-                latestTextContent = msg.content;
+                latestTextContent = cleanNotificationText(msg.content);
+            } else if (msg.type == 1) {
+                latestTextContent = "[语音消息]";
             } else if (msg.type == 4) {
                 latestTextContent = "[图片]";
             }
@@ -442,10 +595,12 @@ public class AiReplyHelper {
                 sendLocalNotification(context, character.name, latestTextContent, sessionId, msg.id);
             }
             
-            // Introduce a short delay between messages to simulate typing/reading if it's an active session
+            // Introduce a dynamic delay between messages based on content length
+            // Short messages appear faster, long messages take more "reading time"
             if (i < replies.size() - 1) {
                 try {
-                    Thread.sleep(1500); // 1.5 seconds delay between multiple messages
+                    long delay = computeMessageDelay(item);
+                    Thread.sleep(delay);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -454,15 +609,55 @@ public class AiReplyHelper {
 
         // 处理 AI 返回的 calendar_event（创建/修改/删除日历事件）
         for (com.yoyo.jingxi.network.OpenAIManager.ReplyItem action : calendarActions) {
-            processCalendarAction(db, action);
+            processCalendarAction(db, action, character.id, myPersonaName);
         }
 
     }
 
     /**
-     * 处理 AI 返回的 calendar_event 类型：创建、修改或删除日历事件。
+     * 根据消息内容长度计算下一条消息之前的延迟时间。
+     * 短消息快速弹出，长消息给予更多"阅读时间"，模拟自然对话节奏。
+     *
+     * @param item 当前已插入的消息条目
+     * @return 延迟毫秒数
      */
-    private static void processCalendarAction(AppDatabase db, com.yoyo.jingxi.network.OpenAIManager.ReplyItem item) {
+    private static long computeMessageDelay(com.yoyo.jingxi.network.OpenAIManager.ReplyItem item) {
+        String type = item.type;
+        String content = item.content;
+
+        // 非文本类型使用固定延迟
+        if ("virtual_image".equalsIgnoreCase(type)) {
+            return 2000; // 图片生成需要更多"等待感"
+        }
+        if ("emoji".equalsIgnoreCase(type)) {
+            return 1000; // 表情包快速弹出
+        }
+        if ("voice".equalsIgnoreCase(type)) {
+            // 语音：按字符数估算朗读时间（约 4 字/秒 = 250ms/字）
+            int charLen = (content != null) ? content.length() : 10;
+            return Math.min(4000, Math.max(1200, charLen * 250L));
+        }
+
+        // 文本消息：纯连续线性，每字 120ms，无下限 clamp
+        // 1 字=620ms, 10 字=1700ms, 60 字=7700ms, 125+字=15000ms 上限
+        if (content == null) return 800;
+        int charCount = content.length();
+        long delay = 500 + charCount * 120L;
+        delay = Math.min(15000, delay);  // 最多 15 秒
+        return delay;
+    }
+
+    /**
+     * 处理 AI 返回的 calendar_event 类型：创建、修改或删除日历事件。
+     * 支持时间段（start_time/end_time）、全天事件、重复规则。
+     */
+    private static void processCalendarAction(AppDatabase db, com.yoyo.jingxi.network.OpenAIManager.ReplyItem item, int characterId, String personaName) {
+        // 写权限检查
+        UserContextSettings settings = UserContextSettings.load();
+        if (!settings.canWrite("calendar", characterId, personaName)) {
+            return; // AI 无写入权限，静默跳过
+        }
+
         com.yoyo.jingxi.data.dao.CalendarEventDao dao = db.calendarEventDao();
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
 
@@ -477,6 +672,14 @@ public class AiReplyHelper {
                 if (item.content != null) e.notes = item.content;
                 if (item.date != null && !item.date.isEmpty()) e.eventDate = item.date;
                 if (item.status != null) e.allDay = item.status == 1;
+                // 支持修改时间范围和重复规则
+                if (item.startTime != null && !item.startTime.isEmpty()) {
+                    e.startTime = combineDateAndTime(e.eventDate, item.startTime);
+                }
+                if (item.endTime != null && !item.endTime.isEmpty()) {
+                    e.endTime = combineDateAndTime(e.eventDate, item.endTime);
+                }
+                if (item.recurrence != null && !item.recurrence.isEmpty()) e.recurrence = item.recurrence;
                 dao.update(e);
             } else {
                 // "add" (默认)
@@ -486,12 +689,87 @@ public class AiReplyHelper {
                 e.notes = item.content != null ? item.content : "";
                 e.eventDate = item.date != null && !item.date.isEmpty() ? item.date : sdf.format(new java.util.Date());
                 e.allDay = item.status != null && item.status == 1;
-                e.recurrence = "NONE";
+                e.recurrence = item.recurrence != null && !item.recurrence.isEmpty() ? item.recurrence : "NONE";
+                // 处理时间段
+                if (item.startTime != null && !item.startTime.isEmpty()) {
+                    e.startTime = combineDateAndTime(e.eventDate, item.startTime);
+                }
+                if (item.endTime != null && !item.endTime.isEmpty()) {
+                    e.endTime = combineDateAndTime(e.eventDate, item.endTime);
+                }
                 e.createdAt = System.currentTimeMillis();
                 dao.insert(e);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    /**
+     * 处理 AI 返回的 cycle_record 类型：创建、更新或结束经期记录。
+     * 字段复用：status→flowLevel, content→symptoms, title→notes
+     */
+    private static void processCycleAction(AppDatabase db, com.yoyo.jingxi.network.OpenAIManager.ReplyItem item, int characterId, String personaName) {
+        // 写权限检查
+        UserContextSettings settings = UserContextSettings.load();
+        if (!settings.canWrite("period", characterId, personaName)) {
+            return; // AI 无写入权限，静默跳过
+        }
+
+        com.yoyo.jingxi.data.dao.CycleRecordDao dao = db.cycleRecordDao();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+
+        try {
+            if ("end".equals(item.action)) {
+                // 找到最近一条未结束的经期记录，设置结束日期
+                com.yoyo.jingxi.data.entity.CycleRecord open = dao.getOpenEndedRecord();
+                if (open == null) return;
+                String endDate = item.date != null && !item.date.isEmpty() ? item.date : sdf.format(new java.util.Date());
+                if (endDate.compareTo(open.startDate) < 0) return; // 结束日期不能早于开始
+                open.endDate = endDate;
+                dao.update(open);
+            } else if ("update".equals(item.action) && item.date != null) {
+                // 找到覆盖该日期的经期记录并更新
+                com.yoyo.jingxi.data.entity.CycleRecord r = dao.getPeriodOnDate(item.date);
+                if (r == null) return;
+                if (item.status != null) r.flowLevel = item.status;   // status → flowLevel
+                if (item.content != null && !item.content.isEmpty()) r.symptoms = item.content; // content → symptoms
+                if (item.title != null && !item.title.isEmpty()) r.notes = item.title;           // title → notes
+                dao.update(r);
+            } else {
+                // "add" (默认) - 创建新经期记录
+                com.yoyo.jingxi.data.entity.CycleRecord r = new com.yoyo.jingxi.data.entity.CycleRecord();
+                r.startDate = item.date != null && !item.date.isEmpty() ? item.date : sdf.format(new java.util.Date());
+                r.endDate = r.startDate; // 初始设为同一天（开放状态），等 action='end' 时再闭合
+                if (item.status != null) r.flowLevel = item.status;    // status → flowLevel
+                if (item.content != null && !item.content.isEmpty()) r.symptoms = item.content; // content → symptoms
+                if (item.title != null && !item.title.isEmpty()) r.notes = item.title;           // title → notes
+                r.createdAt = System.currentTimeMillis();
+                dao.insert(r);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * 将 "HH:MM" 格式的时间字符串与日期字符串组合，返回 epoch millis。
+     */
+    private static long combineDateAndTime(String dateStr, String timeStr) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US);
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(sdf.parse(dateStr));
+            String[] parts = timeStr.trim().split(":");
+            if (parts.length >= 2) {
+                cal.set(java.util.Calendar.HOUR_OF_DAY, Integer.parseInt(parts[0].trim()));
+                cal.set(java.util.Calendar.MINUTE, Integer.parseInt(parts[1].trim()));
+            }
+            cal.set(java.util.Calendar.SECOND, 0);
+            cal.set(java.util.Calendar.MILLISECOND, 0);
+            return cal.getTimeInMillis();
+        } catch (Exception e) {
+            return 0;
         }
     }
 
@@ -756,6 +1034,45 @@ public class AiReplyHelper {
         return memory;
     }
 
+    /**
+     * 清理消息文本中的 TTS 语气词标签和停顿标签，用于通知展示。
+     * 语气标签如 (laughs)/(sighs) 等，停顿标签如 &lt;#0.5#&gt;。
+     * ChatAdapter.getCleanVoiceText() 也委托到此方法，避免重复维护标签列表。
+     */
+    public static String cleanNotificationText(String content) {
+        if (content == null) return "";
+        String cleaned = content;
+        // 移除停顿标签 <#0.5#>, <#1#>, <#2.0#> 等
+        cleaned = cleaned.replaceAll("<#[0-9.]+?#>", "");
+        // 移除语气词标签
+        cleaned = cleaned.replaceAll("\\(laughs\\)", "");
+        cleaned = cleaned.replaceAll("\\(chuckle\\)", "");
+        cleaned = cleaned.replaceAll("\\(coughs\\)", "");
+        cleaned = cleaned.replaceAll("\\(clear-throat\\)", "");
+        cleaned = cleaned.replaceAll("\\(clears throat\\)", "");
+        cleaned = cleaned.replaceAll("\\(groans\\)", "");
+        cleaned = cleaned.replaceAll("\\(breath\\)", "");
+        cleaned = cleaned.replaceAll("\\(pant\\)", "");
+        cleaned = cleaned.replaceAll("\\(inhale\\)", "");
+        cleaned = cleaned.replaceAll("\\(exhale\\)", "");
+        cleaned = cleaned.replaceAll("\\(gasps\\)", "");
+        cleaned = cleaned.replaceAll("\\(sniffs\\)", "");
+        cleaned = cleaned.replaceAll("\\(sighs\\)", "");
+        cleaned = cleaned.replaceAll("\\(cries\\)", "");
+        cleaned = cleaned.replaceAll("\\(yawns\\)", "");
+        cleaned = cleaned.replaceAll("\\(swallows\\)", "");
+        cleaned = cleaned.replaceAll("\\(snorts\\)", "");
+        cleaned = cleaned.replaceAll("\\(burps\\)", "");
+        cleaned = cleaned.replaceAll("\\(lip-smacking\\)", "");
+        cleaned = cleaned.replaceAll("\\(humming\\)", "");
+        cleaned = cleaned.replaceAll("\\(hissing\\)", "");
+        cleaned = cleaned.replaceAll("\\(emm\\)", "");
+        cleaned = cleaned.replaceAll("\\(sneezes\\)", "");
+        // 兜底：移除剩余的任何 (英文) 标签
+        cleaned = cleaned.replaceAll("\\([a-zA-Z][^)]*\\)", "");
+        return cleaned.trim();
+    }
+
     private static void sendLocalNotification(Context context, String title, String content, int sessionId, int notificationId) {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         String channelId = "new_message_channel";
@@ -1016,6 +1333,81 @@ public class AiReplyHelper {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    /** 解析 JSON 数组格式的图片 URL */
+    private static java.util.List<String> parseImageUrls(String imageUrlsJson) {
+        if (imageUrlsJson == null || imageUrlsJson.isEmpty()) return null;
+        try {
+            return new com.google.gson.Gson().fromJson(imageUrlsJson,
+                    new com.google.gson.reflect.TypeToken<java.util.List<String>>(){}.getType());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 下载图片并返回 base64 编码字符串（去除 data:image 前缀） */
+    private static String downloadImageAsBase64(String imageUrl) {
+        try {
+            java.net.URL url = new java.net.URL(imageUrl);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(8000);
+            conn.setReadTimeout(8000);
+            conn.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36");
+            conn.setRequestProperty("Referer", "https://www.xiaohongshu.com/");
+
+            java.io.InputStream is = conn.getInputStream();
+            android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(is);
+            is.close();
+            conn.disconnect();
+
+            if (bitmap == null) return null;
+
+            // 压缩到 1024px 宽
+            int w = bitmap.getWidth();
+            int h = bitmap.getHeight();
+            if (w > 1024) {
+                float ratio = 1024f / w;
+                android.graphics.Bitmap scaled = android.graphics.Bitmap.createScaledBitmap(
+                        bitmap, 1024, (int)(h * ratio), true);
+                bitmap.recycle();
+                bitmap = scaled;
+            }
+
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos);
+            bitmap.recycle();
+            byte[] bytes = baos.toByteArray();
+            baos.close();
+
+            return android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 从文本中提取 URL。与 ChatActivity.extractUrlFromText 逻辑一致。
+     */
+    private static String extractUrlFromText(String text) {
+        if (text == null) return null;
+        if (text.startsWith("http://") || text.startsWith("https://")) {
+            int sp = text.indexOf(' ');
+            return sp > 0 ? text.substring(0, sp) : text;
+        }
+        for (String domain : new String[]{"xhslink.com", "xhslink.cn", "b23.tv", "v.douyin.com", "t.cn"}) {
+            int i = text.indexOf(domain);
+            if (i >= 0) {
+                int s = i;
+                while (s > 0 && text.charAt(s - 1) != ' ' && text.charAt(s - 1) != '\n') s--;
+                int e = i + domain.length();
+                while (e < text.length() && text.charAt(e) != ' ' && text.charAt(e) != '\n') e++;
+                String u = text.substring(s, e);
+                return u.startsWith("http") ? u : "https://" + u;
+            }
+        }
+        return null;
     }
 
 }

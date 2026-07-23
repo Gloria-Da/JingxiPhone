@@ -47,6 +47,16 @@
         android:orientation="horizontal"
         android:paddingEnd="64dp">
 
+        <CheckBox
+            android:id="@+id/cbSelectLeft"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:visibility="gone" />
+
         <FrameLayout
             android:layout_width="40dp"
             android:layout_height="40dp">
@@ -88,35 +98,33 @@
 
             <ImageView
                 android:id="@+id/ivImageLeft"
-                android:layout_width="wrap_content"
+                android:layout_width="@dimen/chat_image_width"
                 android:layout_height="wrap_content"
                 android:minWidth="120dp"
                 android:minHeight="120dp"
-                android:maxWidth="300dp"
-                android:maxHeight="300dp"
+                android:maxHeight="@dimen/chat_image_max_height"
                 android:adjustViewBounds="true"
                 android:scaleType="fitCenter"
+                android:background="@drawable/bg_chat_image_rounded"
+                android:clipToOutline="true"
                 android:layout_marginTop="4dp"
                 android:visibility="gone" />
 
         <FrameLayout
             android:id="@+id/flVirtualImageLeft"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/chat_virtual_image_size"
+            android:layout_height="@dimen/chat_virtual_image_size"
             android:layout_marginTop="4dp"
             android:background="@drawable/bg_virtual_image"
             android:visibility="gone">
 
             <ImageView
                 android:id="@+id/ivVirtualImageContentLeft"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="120dp"
-                android:minHeight="120dp"
-                android:maxWidth="300dp"
-                android:maxHeight="300dp"
-                android:adjustViewBounds="true"
-                android:scaleType="fitCenter" />
+                android:layout_width="@dimen/chat_virtual_image_size"
+                android:layout_height="@dimen/chat_virtual_image_size"
+                android:scaleType="centerCrop"
+                android:background="@drawable/bg_chat_image_rounded"
+                android:clipToOutline="true" />
                 
             <ImageView
                 android:id="@+id/ivVirtualImagePlaceholderLeft"
@@ -127,6 +135,34 @@
                 app:tint="?attr/colorTextSecondary" />
         </FrameLayout>
 
+        <!-- 多图堆叠翻页（type=5 合并多图时显示） -->
+        <com.yoyo.jingxi.ui.widget.PhotoStackView
+            android:id="@+id/photoStackLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
+        <!-- 多图展开/收起按钮 -->
+        <TextView
+            android:id="@+id/tvExpandToggleLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="展开全部"
+            android:textSize="12sp"
+            android:textColor="?attr/colorTextSecondary"
+            android:padding="4dp"
+            android:layout_marginTop="2dp"
+            android:visibility="gone" />
+
+        <!-- 多图展开后的图片列表 -->
+        <LinearLayout
+            android:id="@+id/llExpandedImagesLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/llVoiceContainerLeft"
             android:layout_width="wrap_content"
@@ -135,38 +171,31 @@
             android:layout_marginTop="4dp"
             android:visibility="gone">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvVoiceLeft"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:background="@drawable/bg_chat_bubble_left"
+                    android:gravity="center_vertical"
+                    android:drawableStart="@android:drawable/ic_btn_speak_now"
+                    android:drawablePadding="8dp"
+                    android:text="3&quot;"
+                    android:textColor="?attr/colorTextPrimary"
+                    android:textSize="16sp" />
 
-                    <TextView
-                        android:id="@+id/tvVoiceLeft"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:background="@drawable/bg_chat_bubble_left"
-                        android:gravity="center_vertical"
-                        android:drawableStart="@android:drawable/ic_btn_speak_now"
-                        android:drawablePadding="8dp"
-                        android:text="3&quot;"
-                        android:textColor="?attr/colorTextPrimary"
-                        android:textSize="16sp" />
-
-                    <TextView
-                        android:id="@+id/tvVoiceToTextBtnLeft"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="转文字"
-                        android:textColor="?attr/colorTextSecondary"
-                        android:textSize="12sp"
-                        android:padding="4dp" />
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/tvVoiceToTextBtnLeft"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="转文字"
+                    android:textColor="?attr/colorTextSecondary"
+                    android:textSize="12sp"
+                    android:padding="4dp" />
 
             <TextView
                 android:id="@+id/tvVoiceTextLeft"
@@ -213,6 +242,20 @@
                     android:maxLines="3"
                     android:ellipsize="end" />
             </LinearLayout>
+
+            <com.yoyo.jingxi.ui.widget.SharedContentCardView
+                android:id="@+id/sharedContentCardLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+
+            <com.yoyo.jingxi.ui.widget.ForwardCardView
+                android:id="@+id/forwardCardLeft"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
 
         </LinearLayout>
 

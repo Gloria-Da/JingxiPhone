@@ -55,4 +55,14 @@
     <string name="no_cycle_today">今天没有经期记录</string>
     <string name="edit">编辑</string>
     <string name="predicted_label">预测</string>
+    <!-- 分享功能 -->
+    <string name="forward_single">逐条转发</string>
+    <string name="forward_merge">合并转发</string>
+    <string name="forward_title">选择转发对象</string>
+    <string name="multi_select_title">已选择 %d 条</string>
+    <string name="forward_success">已转发</string>
+    <string name="share_to_agent">分享给角色</string>
+    <string name="select_character">选择角色</string>
+    <string name="select_persona">选择人设</string>
+    <string name="enter_multi_select">多选</string>
 </resources>

@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import com.yoyo.jingxi.data.entity.CallMessage;
 
@@ -13,6 +14,9 @@ import java.util.List;
 public interface CallMessageDao {
     @Insert
     long insert(CallMessage callMessage);
+
+    @Update
+    void update(CallMessage callMessage);
 
     @Query("SELECT * FROM call_messages WHERE callId = :callId ORDER BY timestamp ASC")
     LiveData<List<CallMessage>> getCallMessagesByCallId(int callId);
