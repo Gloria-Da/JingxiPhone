@@ -33,6 +33,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 
 public class ImageGenerationManager {
     private static final String TAG = "ImageGenerationManager";
@@ -201,7 +202,7 @@ public class ImageGenerationManager {
             return;
         }
 
-        String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/v1/");
         String key = SpUtils.getString("IMAGE_API_KEY", "");
         String model = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");
 
@@ -213,7 +214,7 @@ public class ImageGenerationManager {
         if (!endpoint.endsWith("/")) {
             endpoint += "/";
         }
-        String requestUrl = endpoint + "v1/images/generations";
+        String requestUrl = ApiUrlBuilder.imageGenerations(endpoint);
         
         String size = "1024x1792";
         try {
@@ -251,7 +252,7 @@ public class ImageGenerationManager {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.openai.com/") // Dummy base
+                .baseUrl("https://api.openai.com/v1/") // Dummy base
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -368,7 +369,7 @@ public class ImageGenerationManager {
             return;
         }
 
-        String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/v1/");
         String key = SpUtils.getString("IMAGE_API_KEY", "");
         String model = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");
 
@@ -387,7 +388,7 @@ public class ImageGenerationManager {
         if (!endpoint.endsWith("/")) {
             endpoint += "/";
         }
-        String requestUrl = endpoint + "v1/images/generations";
+        String requestUrl = ApiUrlBuilder.imageGenerations(endpoint);
 
         String size = "1024x1792";
         try {
@@ -421,7 +422,7 @@ public class ImageGenerationManager {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.openai.com/") // Dummy base
+                .baseUrl("https://api.openai.com/v1/") // Dummy base
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();

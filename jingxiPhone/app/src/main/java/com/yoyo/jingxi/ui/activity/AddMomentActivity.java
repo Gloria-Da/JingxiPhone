@@ -26,6 +26,7 @@ import com.yoyo.jingxi.data.entity.MyPersona;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 
 public class AddMomentActivity extends AppCompatActivity {
 
@@ -485,7 +486,7 @@ public class AddMomentActivity extends AppCompatActivity {
             java.util.List<String> momentImages) {
 
         String apiKey = com.yoyo.jingxi.utils.SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = com.yoyo.jingxi.utils.SpUtils.getString("API_MODEL", "gpt-4o-mini");
         if (apiKey.isEmpty()) return;
         if (!endpoint.endsWith("/")) endpoint += "/";
@@ -573,7 +574,7 @@ public class AddMomentActivity extends AppCompatActivity {
                 }
                 request.response_format = new com.yoyo.jingxi.network.OpenAiRequest.ResponseFormat();
 
-                retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = customApi.createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+                retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = customApi.createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
 
                 boolean actualCommented = processIndividualResponse(moment, character, isMustInteract, response);
 
@@ -602,7 +603,7 @@ public class AddMomentActivity extends AppCompatActivity {
             java.util.List<String> momentImages) {
 
         String apiKey = com.yoyo.jingxi.utils.SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = com.yoyo.jingxi.utils.SpUtils.getString("API_MODEL", "gpt-4o-mini");
         if (apiKey.isEmpty()) return;
         if (!endpoint.endsWith("/")) endpoint += "/";
@@ -691,7 +692,7 @@ public class AddMomentActivity extends AppCompatActivity {
                 request.messages.add(new com.yoyo.jingxi.network.OpenAiRequest.Message("user", "请为每个角色返回互动 JSON。"));
             }
 
-            retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = customApi.createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+            retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = customApi.createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
 
             if (response.isSuccessful() && response.body() != null && !response.body().choices.isEmpty()) {
                 String content = response.body().choices.get(0).message.content;

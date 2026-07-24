@@ -18,6 +18,7 @@ import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.ChatSession;
 import com.yoyo.jingxi.data.entity.Message;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.utils.SpUtils;
 import com.yoyo.jingxi.network.OpenAiRequest;
@@ -124,10 +125,10 @@ public class AutoMessageWorker extends Worker {
             OpenAiRequest decisionRequest = buildAutoMessageDecisionRequest(character.persona, myName, scheduleContent, historyForDecision, idleTimeMs, character.nationality, character.location);
 
             try {
-                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                 if (!endpoint.endsWith("/")) endpoint += "/";
 
-                Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, decisionRequest).execute();
+                Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, decisionRequest).execute();
                 
                 if (response.isSuccessful() && response.body() != null && response.body().choices != null && !response.body().choices.isEmpty()) {
 

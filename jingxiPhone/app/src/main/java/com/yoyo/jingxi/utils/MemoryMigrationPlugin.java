@@ -11,6 +11,7 @@ import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.EpisodicMemory;
 import com.yoyo.jingxi.data.entity.Memory;
 import com.yoyo.jingxi.data.entity.UserProfileNode;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -72,9 +73,9 @@ public class MemoryMigrationPlugin {
             String wbCtx = AiReplyHelper.buildWorldbookContextForCurator(db);
 
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             if (!endpoint.endsWith("/")) endpoint += "/";
-            String url = endpoint + "v1/chat/completions";
+            String url = ApiUrlBuilder.chatCompletions(endpoint);
             String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
             if (apiKey.isEmpty()) {

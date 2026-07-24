@@ -15,6 +15,7 @@ import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.MyPersona;
 import com.yoyo.jingxi.data.entity.RelationshipEdge;
 import com.yoyo.jingxi.data.entity.RelationshipNode;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -44,7 +45,7 @@ public class RelationshipExtractionManager {
 
         new Thread(() -> {
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
             if (TextUtils.isEmpty(apiKey)) {
@@ -52,7 +53,7 @@ public class RelationshipExtractionManager {
                 return;
             }
             if (!endpoint.endsWith("/")) endpoint += "/";
-            String finalUrl = endpoint + "v1/chat/completions";
+            String finalUrl = ApiUrlBuilder.chatCompletions(endpoint);
 
             String prompt = "请分析以下文本，提取出其中所有角色之间的人际关系网络。用户可能会描述创建新的人物，也可能是在补充现有角色的信息或他们之间的关系。\n" +
                     "文本：\n" + inputContext + "\n\n" +

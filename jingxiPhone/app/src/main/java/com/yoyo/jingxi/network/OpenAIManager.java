@@ -19,22 +19,27 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class OpenAIManager {
-    private static final String BASE_URL = "https://api.openai.com/"; // 或者代理地址
+    private static final String BASE_URL = "https://api.openai.com/v1/"; // 或者代理地址
     private OpenAiApi api;
     private MiniMaxApi miniMaxApi;
     private String cachedMiniMaxBaseUrl;
     private Gson gson;
 
     public OpenAIManager() {
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(300, TimeUnit.SECONDS)
                 .writeTimeout(300, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
+                .addInterceptor(logging)
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
@@ -771,7 +776,6 @@ public class OpenAIManager {
             }
         }
 
-        request.response_format = new OpenAiRequest.ResponseFormat();
         return request;
     }
 

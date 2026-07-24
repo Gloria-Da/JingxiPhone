@@ -29,6 +29,7 @@ import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.InnerVoice;
 import com.yoyo.jingxi.data.entity.Message;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -155,6 +156,7 @@ public class ChatActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if ("com.yoyo.jingxi.ACTION_AI_REPLY_STATUS".equals(intent.getAction())) {
                 boolean isReplying = intent.getBooleanExtra("is_replying", false);
+                String errorData = intent.getStringExtra("error_data");
                 runOnUiThread(() -> {
                     if (!isReplying) {
                         if (getSupportActionBar() != null) {
@@ -162,6 +164,12 @@ public class ChatActivity extends AppCompatActivity {
                         }
                         btnSend.setEnabled(true);
                         checkAndGenerateSummaryMemory();
+
+                        // 如果有错误信息，弹出错误弹窗
+                        if (errorData != null && !errorData.isEmpty()) {
+                            com.yoyo.jingxi.ui.dialog.ErrorDialogFragment.newInstance(errorData)
+                                .show(getSupportFragmentManager(), "error_dialog");
+                        }
                     } else {
                         if (getSupportActionBar() != null) {
                             getSupportActionBar().setTitle("对方正在输入中...");
@@ -1308,7 +1316,7 @@ public class ChatActivity extends AppCompatActivity {
             if (newSinceLastSummary >= summaryRounds * 2) {
                 SpUtils.putBoolean("IS_SUMMARIZING_" + currentCharacter.id, true);
                 String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                 String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
                 if (TextUtils.isEmpty(apiKey)) return;
                 if (!endpoint.endsWith("/")) endpoint += "/";
@@ -1342,7 +1350,7 @@ public class ChatActivity extends AppCompatActivity {
                 request.messages.add(new OpenAiRequest.Message("user", prompt));
 
                 try {
-                    retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+                    retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
                     if (response.isSuccessful() && response.body() != null && response.body().choices != null
                             && !response.body().choices.isEmpty()
                             && response.body().choices.get(0) != null

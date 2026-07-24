@@ -14,6 +14,8 @@ import androidx.core.app.NotificationCompat;
 import com.yoyo.jingxi.R;
 import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.Character;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.ui.activity.ChatMainActivity;
 
@@ -59,17 +61,18 @@ public class AiReplyHelper {
             }
 
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String tempEndpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String tempEndpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
             if (android.text.TextUtils.isEmpty(apiKey)) {
+                insertErrorAndNotify(db, context, sessionId, characterId,
+                    "[系统提示: 未配置API密钥，请在设置中填写API密钥。]");
+                broadcastErrorStatus(context, false,
+                    "{\"httpCode\":0,\"apiCode\":\"\",\"apiMessage\":\"未配置API密钥\"}");
                 return;
             }
             
-            if (!tempEndpoint.endsWith("/")) {
-                tempEndpoint += "/";
-            }
-            String finalUrl = tempEndpoint + "v1/chat/completions";
+            String finalUrl = ApiUrlBuilder.chatCompletions(tempEndpoint);
             
             int historyRounds = SpUtils.getInt("SETTING_HISTORY_ROUNDS", 80);
             java.util.List<com.yoyo.jingxi.data.entity.Message> history = db.messageDao().getRecentMessagesBySessionIdSync(sessionId, historyRounds * 2);
@@ -286,7 +289,7 @@ public class AiReplyHelper {
                             epSummary.length() > 0 ? epSummary.toString() : null,
                             subConfig.model);
                         try {
-                            String subUrl = subConfig.endpoint + "v1/chat/completions";
+                            String subUrl = ApiUrlBuilder.chatCompletions(subConfig.endpoint);
                             retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> subResponse =
                                 aiManager.getApi().createChatCompletion(subUrl, "Bearer " + subConfig.apiKey, subRequest).execute();
                             if (subResponse.isSuccessful() && subResponse.body() != null
@@ -378,7 +381,35 @@ public class AiReplyHelper {
 
                 broadcastReplyStatus(context, false);
             } else {
-                broadcastReplyStatus(context, false);
+                // 读取错误响应体，提取错误码和消息
+                int httpCode = response != null ? response.code() : 0;
+                String apiCode = "";
+                String apiMessage = "";
+
+                if (response != null && response.errorBody() != null) {
+                    try {
+                        String errBody = response.errorBody().string();
+                        android.util.Log.e("AiReplyHelper", "AI API Error HTTP " + httpCode + ": " + errBody);
+                        try {
+                            com.google.gson.JsonObject errObj = new com.google.gson.Gson().fromJson(errBody, com.google.gson.JsonObject.class);
+                            if (errObj.has("error")) {
+                                com.google.gson.JsonObject err = errObj.getAsJsonObject("error");
+                                if (err.has("code")) apiCode = err.get("code").getAsString();
+                                if (err.has("message")) apiMessage = err.get("message").getAsString();
+                            }
+                        } catch (Exception parseEx) {
+                            // 错误体不是标准 JSON 格式，使用原始文本
+                            if (errBody.length() < 200) apiMessage = errBody;
+                        }
+                    } catch (Exception ex) {
+                        android.util.Log.e("AiReplyHelper", "Failed to read errorBody", ex);
+                    }
+                }
+
+                String errorJson = "{\"httpCode\":" + httpCode
+                    + ",\"apiCode\":\"" + escapeJson(apiCode)
+                    + "\",\"apiMessage\":\"" + escapeJson(apiMessage) + "\"}";
+                broadcastErrorStatus(context, false, errorJson);
             }
 
         } catch (Exception e) {
@@ -391,9 +422,32 @@ public class AiReplyHelper {
 
     public static void broadcastReplyStatus(Context context, boolean isReplying) {
         Intent intent = new Intent("com.yoyo.jingxi.ACTION_AI_REPLY_STATUS");
-        intent.setPackage(context.getPackageName()); // 显式广播，防止被系统限制
+        intent.setPackage(context.getPackageName());
         intent.putExtra("is_replying", isReplying);
         context.sendBroadcast(intent);
+    }
+
+    /**
+     * 广播带错误数据的回复状态。
+     * @param errorData JSON 格式的错误信息，如 {"httpCode":401,"apiCode":"1000","apiMessage":"..."}
+     */
+    public static void broadcastErrorStatus(Context context, boolean isReplying, String errorData) {
+        Intent intent = new Intent("com.yoyo.jingxi.ACTION_AI_REPLY_STATUS");
+        intent.setPackage(context.getPackageName());
+        intent.putExtra("is_replying", isReplying);
+        if (errorData != null && !errorData.isEmpty()) {
+            intent.putExtra("error_data", errorData);
+        }
+        context.sendBroadcast(intent);
+    }
+
+    /**
+     * 简单 JSON 字符串转义，防止注入。
+     */
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
 
     private static void insertErrorAndNotify(AppDatabase db, Context context, int sessionId, int characterId, String errorContent) {
@@ -599,7 +653,7 @@ public class AiReplyHelper {
             // Short messages appear faster, long messages take more "reading time"
             if (i < replies.size() - 1) {
                 try {
-                    long delay = computeMessageDelay(item);
+                    long delay = computeMessageDelay(replies.get(i + 1));
                     Thread.sleep(delay);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -797,7 +851,7 @@ public class AiReplyHelper {
             com.yoyo.jingxi.network.OpenAiRequest curatorReq = aiManager.buildMemoryCuratorRequest(
                 character.persona, myName, notes, existingContext, curatorConfig.model, relInfo, wbCtx);
             retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> curResp =
-                aiManager.getApi().createChatCompletion(curatorConfig.endpoint + "v1/chat/completions", "Bearer " + curatorConfig.apiKey, curatorReq).execute();
+                aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(curatorConfig.endpoint), "Bearer " + curatorConfig.apiKey, curatorReq).execute();
             if (curResp.isSuccessful() && curResp.body() != null && curResp.body().choices != null && !curResp.body().choices.isEmpty()) {
                 String curJson = curResp.body().choices.get(0).message.content;
                 com.yoyo.jingxi.network.OpenAIManager.CuratorResult result = aiManager.parseCuratorResponse(curJson);
@@ -864,7 +918,7 @@ public class AiReplyHelper {
                 relInfo, wbCtx, curatorConfig.model);
             curatorReq.response_format = new com.yoyo.jingxi.network.OpenAiRequest.ResponseFormat();
             retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> curResp =
-                aiManager.getApi().createChatCompletion(curatorConfig.endpoint + "v1/chat/completions", "Bearer " + curatorConfig.apiKey, curatorReq).execute();
+                aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(curatorConfig.endpoint), "Bearer " + curatorConfig.apiKey, curatorReq).execute();
             if (curResp.isSuccessful() && curResp.body() != null && curResp.body().choices != null && !curResp.body().choices.isEmpty()) {
                 String curJson = curResp.body().choices.get(0).message.content;
                 com.yoyo.jingxi.network.OpenAIManager.CuratorResult result = aiManager.parseCuratorResponse(curJson);
@@ -975,7 +1029,7 @@ public class AiReplyHelper {
 
             retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> curResp =
                 aiManager.getApi().createChatCompletion(
-                    curatorConfig.endpoint + "v1/chat/completions",
+                    ApiUrlBuilder.chatCompletions(curatorConfig.endpoint),
                     "Bearer " + curatorConfig.apiKey,
                     curatorReq).execute();
 

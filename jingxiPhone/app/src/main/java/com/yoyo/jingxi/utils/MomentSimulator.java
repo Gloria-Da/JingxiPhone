@@ -16,6 +16,7 @@ import com.yoyo.jingxi.data.entity.Message;
 import com.yoyo.jingxi.data.entity.MyPersona;
 import com.yoyo.jingxi.data.entity.RelationshipEdge;
 import com.yoyo.jingxi.data.entity.RelationshipNode;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -403,7 +404,7 @@ public class MomentSimulator {
 
     private static int evaluateMomentInteractivity(Moment moment) {
         String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
         if (apiKey.isEmpty()) return 2; // 默认中等
@@ -419,7 +420,7 @@ public class MomentSimulator {
         request.messages.add(new OpenAiRequest.Message("user", contentToEval));
 
         try {
-            retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+            retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
             if (response.isSuccessful() && response.body() != null && !response.body().choices.isEmpty()) {
                 String content = response.body().choices.get(0).message.content.trim();
                 if (content.contains("1")) return 1;
@@ -536,7 +537,7 @@ public class MomentSimulator {
         try {
             OpenAIManager aiManager = new OpenAIManager();
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
             if (apiKey.isEmpty()) return false;
@@ -630,7 +631,7 @@ public class MomentSimulator {
                 request.messages.add(new OpenAiRequest.Message("user", systemPrompt.toString() + "\n请返回评论的 JSON 数据。"));
             }
 
-            retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+            retrofit2.Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
 
             if (response.isSuccessful() && response.body() != null && !response.body().choices.isEmpty()) {
                 String content = response.body().choices.get(0).message.content;

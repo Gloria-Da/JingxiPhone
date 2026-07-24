@@ -23,6 +23,7 @@ import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.ChatSession;
 import com.yoyo.jingxi.data.entity.Message;
 import com.yoyo.jingxi.network.OpenAiApi;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -632,11 +633,11 @@ public class WeatherActivity extends AppCompatActivity {
                 request.messages.add(new OpenAiRequest.Message("user", "给我一条今天的天气提醒便签吧。"));
 
                 OpenAiApi api = new OpenAIManager().getApi();
-                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                 if (!endpoint.endsWith("/")) {
                     endpoint += "/";
                 }
-                String apiUrl = endpoint + "v1/chat/completions";
+                String apiUrl = ApiUrlBuilder.chatCompletions(endpoint);
                 String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
                 Call<OpenAiResponse> call = api.createChatCompletion(apiUrl, "Bearer " + apiKey, request);
                 Response<OpenAiResponse> response = call.execute();

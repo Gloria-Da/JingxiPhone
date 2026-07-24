@@ -29,7 +29,7 @@ public class MemoryApiConfig {
         String customModel = SpUtils.getString("MEMORY_V2_CURATOR_MODEL", "");
 
         if (useMainApi || TextUtils.isEmpty(customEndpoint))
-            config.endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            config.endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         else config.endpoint = customEndpoint;
 
         if (useMainApi || TextUtils.isEmpty(customKey))
@@ -53,7 +53,7 @@ public class MemoryApiConfig {
         String customModel = SpUtils.getString("MEMORY_V2_SUBCONSCIOUS_MODEL", "");
 
         if (useMainApi || TextUtils.isEmpty(customEndpoint)) {
-            config.endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            config.endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         } else {
             config.endpoint = customEndpoint;
         }

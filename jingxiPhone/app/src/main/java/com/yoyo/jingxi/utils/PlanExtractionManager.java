@@ -14,6 +14,7 @@ import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.Memo;
 import com.yoyo.jingxi.data.entity.Message;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -81,7 +82,7 @@ public class PlanExtractionManager {
             String currentDateTimeStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
             if (TextUtils.isEmpty(apiKey)) {
@@ -89,7 +90,7 @@ public class PlanExtractionManager {
                 return;
             }
             if (!endpoint.endsWith("/")) endpoint += "/";
-            String finalUrl = endpoint + "v1/chat/completions";
+            String finalUrl = ApiUrlBuilder.chatCompletions(endpoint);
 
             String prompt = "现在的真实系统日期是：" + currentDateTimeStr + "。\n" +
                     "请分析以下聊天记录，提取出其中提到的**属于对方（" + character.name + "）未来的明确计划、安排或约定**。\n" +
@@ -182,9 +183,9 @@ public class PlanExtractionManager {
 
         try {
             String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+            String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
             if (!endpoint.endsWith("/")) endpoint += "/";
-            String finalUrl = endpoint + "v1/chat/completions";
+            String finalUrl = ApiUrlBuilder.chatCompletions(endpoint);
 
             Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(finalUrl, "Bearer " + apiKey, request).execute();
             if (response.isSuccessful() && response.body() != null && response.body().choices != null && !response.body().choices.isEmpty() && response.body().choices.get(0).message != null && response.body().choices.get(0).message.content != null) {
@@ -306,7 +307,7 @@ public class PlanExtractionManager {
         request.messages.add(new OpenAiRequest.Message("user", prompt));
         
         try {
-            Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+            Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
             if (response.isSuccessful() && response.body() != null && response.body().choices != null && !response.body().choices.isEmpty()) {
                 String jsonResponse = response.body().choices.get(0).message.content.trim();
                 jsonResponse = cleanJsonResponse(jsonResponse);

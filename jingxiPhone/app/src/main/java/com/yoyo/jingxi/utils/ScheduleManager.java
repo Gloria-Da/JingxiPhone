@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.DailySchedule;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.data.AppDatabase;
 import com.yoyo.jingxi.network.OpenAiRequest;
@@ -70,14 +71,14 @@ public class ScheduleManager {
         }
 
         String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
         if (TextUtils.isEmpty(apiKey)) {
             throw new Exception("请先配置 API KEY");
         }
         if (!endpoint.endsWith("/")) endpoint += "/";
-        String finalUrl = endpoint + "v1/chat/completions";
+        String finalUrl = ApiUrlBuilder.chatCompletions(endpoint);
 
         String currentDateTime = new SimpleDateFormat("yyyy年MM月dd日 EEEE HH:mm", Locale.getDefault()).format(new Date());
         String todayDateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
@@ -299,7 +300,7 @@ public class ScheduleManager {
         }
 
         String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
         if (TextUtils.isEmpty(apiKey)) {
@@ -307,7 +308,7 @@ public class ScheduleManager {
             return;
         }
         if (!endpoint.endsWith("/")) endpoint += "/";
-        String finalUrl = endpoint + "v1/chat/completions";
+        String finalUrl = ApiUrlBuilder.chatCompletions(endpoint);
 
         String currentDateTime = new SimpleDateFormat("yyyy年MM月dd日 EEEE HH:mm", Locale.getDefault()).format(new Date());
         String todayDateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());

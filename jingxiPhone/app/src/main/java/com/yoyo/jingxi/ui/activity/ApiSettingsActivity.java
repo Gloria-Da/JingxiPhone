@@ -5,6 +5,7 @@ import com.yoyo.jingxi.R;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -16,6 +17,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.yoyo.jingxi.network.ModelListResponse;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.utils.SpUtils;
 
@@ -39,13 +41,13 @@ public class ApiSettingsActivity extends AppCompatActivity {
     private TextInputEditText etImageApiKey;
     private TextInputEditText etSubEndpoint;
     private TextInputEditText etSubApiKey;
-    private Spinner spinnerSubModel;
+    private AutoCompleteTextView spinnerSubModel;
     private Button btnFetchSubModels;
     private com.google.android.material.textfield.TextInputLayout tilSubEndpoint;
     private com.google.android.material.textfield.TextInputLayout tilSubKey;
     private com.google.android.material.switchmaterial.SwitchMaterial switchCuratorUseMainApi;
     private TextInputEditText etCuratorEndpoint, etCuratorKey;
-    private Spinner spinnerCuratorModel;
+    private AutoCompleteTextView spinnerCuratorModel;
     private Button btnFetchCuratorModels;
     private com.google.android.material.textfield.TextInputLayout tilCuratorEndpoint, tilCuratorKey;
 
@@ -53,9 +55,9 @@ public class ApiSettingsActivity extends AppCompatActivity {
     private List<String> subModelList = new ArrayList<>();
     private ArrayAdapter<String> curatorModelAdapter;
     private List<String> curatorModelList = new ArrayList<>();
-    private Spinner spinnerImageModel;
+    private AutoCompleteTextView spinnerImageModel;
     private Button btnFetchImageModels;
-    private Spinner spinnerModel;
+    private AutoCompleteTextView spinnerModel;
     private Button btnFetchModels;
     
     private android.widget.SeekBar seekBarTemperature;
@@ -134,11 +136,9 @@ public class ApiSettingsActivity extends AppCompatActivity {
         tilSubEndpoint = findViewById(R.id.tilSubEndpoint);
         tilSubKey = findViewById(R.id.tilSubKey);
 
-        subModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, subModelList);
-        subModelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        subModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, subModelList);
         spinnerSubModel.setAdapter(subModelAdapter);
-        curatorModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, curatorModelList);
-        curatorModelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        curatorModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, curatorModelList);
         spinnerCuratorModel.setAdapter(curatorModelAdapter);
         
         seekBarTemperature = findViewById(R.id.seekBarTemperature);
@@ -150,13 +150,12 @@ public class ApiSettingsActivity extends AppCompatActivity {
         btnSavePreset = findViewById(R.id.btnSavePreset);
         spinnerPreset = findViewById(R.id.spinnerPreset);
 
-        modelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, modelList);
-        modelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, modelList);
         spinnerModel.setAdapter(modelAdapter);
 
-        imageModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, imageModelList);
-        imageModelAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        imageModelAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, imageModelList);
         spinnerImageModel.setAdapter(imageModelAdapter);
+
 
         presetAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, presetNames);
         presetAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -164,13 +163,13 @@ public class ApiSettingsActivity extends AppCompatActivity {
     }
 
     private void loadCurrentConfig() {
-        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String key = SpUtils.getString("OPENAI_API_KEY", "");
         String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
         
         float temperature = SpUtils.getFloat("API_TEMPERATURE", 0.8f);
         boolean enableImageGen = SpUtils.getBoolean("ENABLE_IMAGE_GEN", false);
-        String imageEndpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/");
+        String imageEndpoint = SpUtils.getString("IMAGE_API_ENDPOINT", "https://api.openai.com/v1/");
         String imageKey = SpUtils.getString("IMAGE_API_KEY", "");
         String imageModel = SpUtils.getString("IMAGE_API_MODEL", "dall-e-3");
         String qWeatherKey = SpUtils.getString("QWEATHER_API_KEY", "");
@@ -196,7 +195,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
             subModelAdapter.notifyDataSetChanged();
         }
         if (!subModel.isEmpty()) {
-            spinnerSubModel.setSelection(subModelList.indexOf(subModel));
+            spinnerSubModel.setText(subModel, false);
         }
         updateSubApiUI(subUseMainApi);
 
@@ -208,20 +207,20 @@ public class ApiSettingsActivity extends AppCompatActivity {
         etCuratorEndpoint.setText(curatorEndpoint);
         etCuratorKey.setText(curatorKey);
         if (!curatorModel.isEmpty() && !curatorModelList.contains(curatorModel)) { curatorModelList.add(curatorModel); curatorModelAdapter.notifyDataSetChanged(); }
-        if (!curatorModel.isEmpty()) spinnerCuratorModel.setSelection(curatorModelList.indexOf(curatorModel));
+        if (!curatorModel.isEmpty()) spinnerCuratorModel.setText(curatorModel, false);
         updateCuratorApiUI(curatorUseMain);
         
         if (!imageModelList.contains(imageModel)) {
             imageModelList.add(imageModel);
             imageModelAdapter.notifyDataSetChanged();
         }
-        spinnerImageModel.setSelection(imageModelList.indexOf(imageModel));
+        spinnerImageModel.setText(imageModel, false);
         
         if (!modelList.contains(model)) {
             modelList.add(model);
             modelAdapter.notifyDataSetChanged();
         }
-        spinnerModel.setSelection(modelList.indexOf(model));
+        spinnerModel.setText(model, false);
 
         seekBarTemperature.setProgress((int) (temperature * 10));
         etTemperatureValue.setText(String.format(java.util.Locale.US, "%.1f", temperature));
@@ -290,6 +289,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
         btnFetchSubModels.setOnClickListener(v -> fetchSubModels());
         btnFetchCuratorModels.setOnClickListener(v -> fetchCuratorModels());
 
+
         seekBarTemperature.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
@@ -324,7 +324,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             String endpoint = etApiEndpoint.getText() != null ? etApiEndpoint.getText().toString().trim() : "";
             String key = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
-            String model = spinnerModel.getSelectedItem() != null ? spinnerModel.getSelectedItem().toString() : "gpt-4o-mini";
+            String model = spinnerModel.getText().toString().trim();
 
             float temperature = 0.8f;
             String tempStr = etTemperatureValue.getText() != null ? etTemperatureValue.getText().toString().trim() : "";
@@ -345,7 +345,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
 
             String imageEndpoint = etImageApiEndpoint.getText() != null ? etImageApiEndpoint.getText().toString().trim() : "";
             String imageKey = etImageApiKey.getText() != null ? etImageApiKey.getText().toString().trim() : "";
-            String imageModel = spinnerImageModel.getSelectedItem() != null ? spinnerImageModel.getSelectedItem().toString() : "dall-e-3";
+            String imageModel = spinnerImageModel.getText().toString().trim();
             String qWeatherKey = etQWeatherKey.getText() != null ? etQWeatherKey.getText().toString().trim() : "";
             String qWeatherHost = etQWeatherHost.getText() != null ? etQWeatherHost.getText().toString().trim() : "";
 
@@ -363,7 +363,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
             boolean subUseMainApi = switchSubUseMainApi.isChecked();
             String subEndpoint = etSubEndpoint.getText() != null ? etSubEndpoint.getText().toString().trim() : "";
             String subKey = etSubApiKey.getText() != null ? etSubApiKey.getText().toString().trim() : "";
-            String subModel = spinnerSubModel.getSelectedItem() != null ? spinnerSubModel.getSelectedItem().toString() : "";
+            String subModel = spinnerSubModel.getText().toString().trim();
             SpUtils.putBoolean("MEMORY_V2_SUBCONSCIOUS_USE_MAIN_API", subUseMainApi);
             SpUtils.putString("MEMORY_V2_SUBCONSCIOUS_ENDPOINT", subEndpoint);
             SpUtils.putString("MEMORY_V2_SUBCONSCIOUS_KEY", subKey);
@@ -372,7 +372,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
             boolean curatorUseMain = switchCuratorUseMainApi.isChecked();
             String curatorEndpoint = etCuratorEndpoint.getText() != null ? etCuratorEndpoint.getText().toString().trim() : "";
             String curatorKey = etCuratorKey.getText() != null ? etCuratorKey.getText().toString().trim() : "";
-            String curatorModel = spinnerCuratorModel.getSelectedItem() != null ? spinnerCuratorModel.getSelectedItem().toString() : "";
+            String curatorModel = spinnerCuratorModel.getText().toString().trim();
             SpUtils.putBoolean("MEMORY_V2_CURATOR_USE_MAIN_API", curatorUseMain);
             SpUtils.putString("MEMORY_V2_CURATOR_ENDPOINT", curatorEndpoint);
             SpUtils.putString("MEMORY_V2_CURATOR_KEY", curatorKey);
@@ -391,7 +391,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
             ApiConfig config = new ApiConfig();
             config.endpoint = etApiEndpoint.getText() != null ? etApiEndpoint.getText().toString().trim() : "";
             config.apiKey = etApiKey.getText() != null ? etApiKey.getText().toString().trim() : "";
-            config.model = spinnerModel.getSelectedItem() != null ? spinnerModel.getSelectedItem().toString() : "";
+            config.model = spinnerModel.getText().toString().trim();
             
             float presetTemperature = 0.8f;
             String presetTempStr = etTemperatureValue.getText() != null ? etTemperatureValue.getText().toString().trim() : "";
@@ -429,7 +429,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
                             modelAdapter.notifyDataSetChanged();
                         }
                         if (!TextUtils.isEmpty(config.model)) {
-                            spinnerModel.setSelection(modelList.indexOf(config.model));
+                            spinnerModel.setText(config.model, false);
                         }
                         
                         float t = config.temperature;
@@ -455,7 +455,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(ep) || TextUtils.isEmpty(key)) { Toast.makeText(this, "请先填入API地址和秘钥", Toast.LENGTH_SHORT).show(); return; }
         if (!ep.endsWith("/")) ep += "/";
         btnFetchCuratorModels.setEnabled(false); btnFetchCuratorModels.setText("拉取中...");
-        new OpenAIManager().getApi().getModels(ep + "v1/models", "Bearer " + key).enqueue(new Callback<ModelListResponse>() {
+        new OpenAIManager().getApi().getModels(ApiUrlBuilder.models(ep), "Bearer " + key).enqueue(new Callback<ModelListResponse>() {
             @Override public void onResponse(Call<ModelListResponse> c, Response<ModelListResponse> r) {
                 btnFetchCuratorModels.setEnabled(true); btnFetchCuratorModels.setText("拉取模型");
                 if (r.isSuccessful() && r.body() != null && r.body().data != null) {
@@ -463,7 +463,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
                     for (ModelListResponse.Model m : r.body().data) curatorModelList.add(m.id);
                     curatorModelAdapter.notifyDataSetChanged();
                     String cur = SpUtils.getString("MEMORY_V2_CURATOR_MODEL", "");
-                    if (!TextUtils.isEmpty(cur) && curatorModelList.contains(cur)) spinnerCuratorModel.setSelection(curatorModelList.indexOf(cur));
+                    if (!TextUtils.isEmpty(cur) && curatorModelList.contains(cur)) spinnerCuratorModel.setText(cur, false);
                     Toast.makeText(ApiSettingsActivity.this, "模型拉取成功", Toast.LENGTH_SHORT).show();
                 } else Toast.makeText(ApiSettingsActivity.this, "拉取失败: " + r.code(), Toast.LENGTH_SHORT).show();
             }
@@ -489,7 +489,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
         }
 
         if (!endpoint.endsWith("/")) endpoint += "/";
-        String modelsUrl = endpoint + "v1/models";
+        String modelsUrl = ApiUrlBuilder.models(endpoint);
 
         btnFetchSubModels.setEnabled(false);
         btnFetchSubModels.setText("拉取中...");
@@ -510,7 +510,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
 
                     String currentSelected = SpUtils.getString("MEMORY_V2_SUBCONSCIOUS_MODEL", "");
                     if (!TextUtils.isEmpty(currentSelected) && subModelList.contains(currentSelected)) {
-                        spinnerSubModel.setSelection(subModelList.indexOf(currentSelected));
+                        spinnerSubModel.setText(currentSelected, false);
                     }
                 } else {
                     Toast.makeText(ApiSettingsActivity.this, "拉取失败: " + response.code(), Toast.LENGTH_SHORT).show();
@@ -539,7 +539,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
             endpoint += "/";
         }
         
-        String modelsUrl = endpoint + "v1/models";
+        String modelsUrl = ApiUrlBuilder.models(endpoint);
 
         if (isForImage) {
             btnFetchImageModels.setEnabled(false);
@@ -575,7 +575,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
                         
                         String currentSelected = SpUtils.getString("IMAGE_API_MODEL", "");
                         if (!TextUtils.isEmpty(currentSelected) && imageModelList.contains(currentSelected)) {
-                            spinnerImageModel.setSelection(imageModelList.indexOf(currentSelected));
+                            spinnerImageModel.setText(currentSelected, false);
                         }
                     } else {
                         modelList.clear();
@@ -586,7 +586,7 @@ public class ApiSettingsActivity extends AppCompatActivity {
                         // Maintain current selection if possible
                         String currentSelected = SpUtils.getString("API_MODEL", "");
                         if (!TextUtils.isEmpty(currentSelected) && modelList.contains(currentSelected)) {
-                            spinnerModel.setSelection(modelList.indexOf(currentSelected));
+                            spinnerModel.setText(currentSelected, false);
                         }
                     }
                 } else {

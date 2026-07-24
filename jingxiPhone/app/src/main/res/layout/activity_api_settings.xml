@@ -87,12 +87,26 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="16dp">
 
-                <Spinner
-                    android:id="@+id/spinnerModel"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilModel"
+                    app:endIconMode="dropdown_menu"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeColor="@color/divider_color"
+                    app:boxBackgroundColor="@color/white_card_bg"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="50dp"
-                    android:background="@drawable/bg_edit_text_rounded" />
+                    android:layout_height="wrap_content">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerModel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:completionThreshold="0"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textColorHint="?attr/colorSecondary"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnFetchModels"
@@ -225,12 +239,26 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="16dp">
 
-                <Spinner
-                    android:id="@+id/spinnerImageModel"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilImageModel"
+                    app:endIconMode="dropdown_menu"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeColor="@color/divider_color"
+                    app:boxBackgroundColor="@color/white_card_bg"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="50dp"
-                    android:background="@drawable/bg_edit_text_rounded" />
+                    android:layout_height="wrap_content">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerImageModel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:completionThreshold="0"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textColorHint="?attr/colorSecondary"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnFetchImageModels"
@@ -320,12 +348,26 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="12dp">
 
-                <Spinner
-                    android:id="@+id/spinnerSubModel"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilSubModel"
+                    app:endIconMode="dropdown_menu"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeColor="@color/divider_color"
+                    app:boxBackgroundColor="@color/white_card_bg"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="50dp"
-                    android:background="@drawable/bg_edit_text_rounded" />
+                    android:layout_height="wrap_content">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerSubModel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:completionThreshold="0"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textColorHint="?attr/colorSecondary"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnFetchSubModels"
@@ -413,12 +455,26 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="12dp">
-                <Spinner
-                    android:id="@+id/spinnerCuratorModel"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilCuratorModel"
+                    app:endIconMode="dropdown_menu"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeColor="@color/divider_color"
+                    app:boxBackgroundColor="@color/white_card_bg"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:layout_height="50dp"
-                    android:background="@drawable/bg_edit_text_rounded" />
+                    android:layout_height="wrap_content">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerCuratorModel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:completionThreshold="0"
+                        android:textColor="?attr/colorTextPrimary"
+                        android:textColorHint="?attr/colorSecondary"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
                 <Button
                     android:id="@+id/btnFetchCuratorModels"
                     android:layout_width="wrap_content"

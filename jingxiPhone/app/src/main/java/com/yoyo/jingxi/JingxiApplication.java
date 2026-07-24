@@ -44,6 +44,7 @@ public class JingxiApplication extends Application {
         instance = this;
         SpUtils.init(this);
         com.yoyo.jingxi.utils.ImageMigrationHelper.migrateIfNeeded(this);
+        migrateApiEndpoints();
         com.yoyo.jingxi.utils.ImageGenerationManager.init(this);
         com.yoyo.jingxi.utils.CrashHandler.getInstance().init(this);
 
@@ -122,6 +123,24 @@ public class JingxiApplication extends Application {
             @Override
             public void onActivityDestroyed(@NonNull Activity activity) {}
         });
+    }
+
+    /**
+     * 一次性迁移：旧版默认 endpoint 不含版本号（如 https://api.openai.com/），
+     * 新版需要含版本号（如 https://api.openai.com/v1/）。
+     * 仅当存储值与旧默认值精确匹配时才替换，用户自定义的 endpoint 不受影响。
+     */
+    private static void migrateApiEndpoints() {
+        migrateEndpoint("API_ENDPOINT", "https://api.openai.com/", "https://api.openai.com/v1/");
+        migrateEndpoint("IMAGE_API_ENDPOINT", "https://api.openai.com/", "https://api.openai.com/v1/");
+        migrateEndpoint("stt_base_url", "https://api.siliconflow.cn/", "https://api.siliconflow.cn/v1/");
+    }
+
+    private static void migrateEndpoint(String key, String oldDefault, String newDefault) {
+        String stored = SpUtils.getString(key, "");
+        if (stored.equals(oldDefault)) {
+            SpUtils.putString(key, newDefault);
+        }
     }
 
     private void setupAutoMessageWorker() {

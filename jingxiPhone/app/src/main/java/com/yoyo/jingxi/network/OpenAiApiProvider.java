@@ -15,6 +15,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 
 public class OpenAiApiProvider implements SttProvider {
 
@@ -29,7 +30,7 @@ public class OpenAiApiProvider implements SttProvider {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://api.openai.com/")
+                .baseUrl("https://api.openai.com/v1/")
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -39,7 +40,7 @@ public class OpenAiApiProvider implements SttProvider {
 
     @Override
     public void recognize(File audioFile, Callback callback) {
-        String sttBaseUrl = SpUtils.getString("stt_base_url", "https://api.siliconflow.cn/");
+        String sttBaseUrl = SpUtils.getString("stt_base_url", "https://api.siliconflow.cn/v1/");
         String sttApiKey = SpUtils.getString("stt_api_key", "");
         String sttModel = SpUtils.getString("stt_model", "FunAudioLLM/SenseVoiceSmall");
 
@@ -56,7 +57,7 @@ public class OpenAiApiProvider implements SttProvider {
         MultipartBody.Part body = MultipartBody.Part.createFormData("file", audioFile.getName(), requestFile);
         RequestBody modelBody = RequestBody.create(MediaType.parse("text/plain"), sttModel);
 
-        String url = sttBaseUrl + "v1/audio/transcriptions";
+        String url = ApiUrlBuilder.audioTranscriptions(sttBaseUrl);
         String auth = "Bearer " + sttApiKey;
 
         api.transcribeAudio(url, auth, body, modelBody).enqueue(new retrofit2.Callback<SttResponse>() {

@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 
 public class MomentsFragment extends Fragment {
 
@@ -320,7 +321,7 @@ public class MomentsFragment extends Fragment {
                 if (publisher != null) {
                     com.yoyo.jingxi.network.OpenAIManager aiManager = new com.yoyo.jingxi.network.OpenAIManager();
                     String apiKey = com.yoyo.jingxi.utils.SpUtils.getString("OPENAI_API_KEY", "");
-                    String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                    String endpoint = com.yoyo.jingxi.utils.SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                     String model = com.yoyo.jingxi.utils.SpUtils.getString("API_MODEL", "gpt-4o-mini");
                     
                     if (apiKey.isEmpty()) return;
@@ -383,7 +384,7 @@ public class MomentsFragment extends Fragment {
                     request.messages.add(new com.yoyo.jingxi.network.OpenAiRequest.Message("user", systemPrompt.toString()));
                     // request.response_format = new com.yoyo.jingxi.network.OpenAiRequest.ResponseFormat(); // 移除以提高兼容性
                     
-                    retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+                    retrofit2.Response<com.yoyo.jingxi.network.OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
                     
                     if (response.isSuccessful() && response.body() != null && !response.body().choices.isEmpty()) {
                         String content = response.body().choices.get(0).message.content;

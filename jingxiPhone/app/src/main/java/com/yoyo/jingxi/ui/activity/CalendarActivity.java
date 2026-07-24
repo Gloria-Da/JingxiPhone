@@ -85,6 +85,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import java.util.Locale;
 import java.util.concurrent.Executors;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 
 public class CalendarActivity extends AppCompatActivity {
 
@@ -744,7 +745,7 @@ public class CalendarActivity extends AppCompatActivity {
         ProgressDialog pd = new ProgressDialog(this); pd.setMessage("AI 正在分析..."); pd.setCancelable(false); pd.show();
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                 if (!endpoint.endsWith("/")) endpoint += "/";
                 String key = SpUtils.getString("OPENAI_API_KEY", "");
                 String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
@@ -769,7 +770,7 @@ public class CalendarActivity extends AppCompatActivity {
                     "示例输出: [{\"name\":\"高等数学\",\"teacher\":\"张老师\",\"location\":\"教学楼A201\",\"dayOfWeek\":0,\"startPeriod\":1,\"periodCount\":2,\"weekPattern\":\"EVERY\"},{\"name\":\"大学英语\",\"teacher\":\"\",\"location\":\"\",\"dayOfWeek\":0,\"startPeriod\":3,\"periodCount\":2,\"weekPattern\":\"EVERY\"}]\n\n" +
                     "只返回JSON, 不要其他文字。\n\n课程描述:\n" + text));
 
-                Response<OpenAiResponse> resp = getImportApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + key, req).execute();
+                Response<OpenAiResponse> resp = getImportApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + key, req).execute();
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().choices == null || resp.body().choices.isEmpty()) {
                     runOnUiThread(() -> { pd.dismiss(); Toast.makeText(this, "API请求失败: " + resp.code(), Toast.LENGTH_SHORT).show(); });
                     return;
@@ -1229,7 +1230,7 @@ public class CalendarActivity extends AppCompatActivity {
 
         Executors.newSingleThreadExecutor().execute(() -> {
             try {
-                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+                String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
                 if (!endpoint.endsWith("/")) endpoint += "/";
                 String key = SpUtils.getString("OPENAI_API_KEY", "");
                 String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
@@ -1288,7 +1289,7 @@ public class CalendarActivity extends AppCompatActivity {
                 for (String b64 : importImageBase64List) parts.add(OpenAiRequest.ContentPart.imageUrl(b64));
                 req.messages.add(new OpenAiRequest.Message("user", parts));
 
-                Response<OpenAiResponse> resp = getImportApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + key, req).execute();
+                Response<OpenAiResponse> resp = getImportApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + key, req).execute();
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().choices == null || resp.body().choices.isEmpty()) {
                     runOnUiThread(() -> { pd.dismiss(); Toast.makeText(this, "API请求失败: " + resp.code(), Toast.LENGTH_SHORT).show(); });
                     return;
@@ -1391,7 +1392,7 @@ public class CalendarActivity extends AppCompatActivity {
     }
 
     private OpenAiApi getImportApi() {
-        String ep = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String ep = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         if (!ep.endsWith("/")) ep += "/";
         OkHttpClient client = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS).readTimeout(90, TimeUnit.SECONDS).build();
         return new Retrofit.Builder().baseUrl(ep).client(client).addConverterFactory(GsonConverterFactory.create()).build().create(OpenAiApi.class);

@@ -12,6 +12,7 @@ import com.yoyo.jingxi.data.entity.Character;
 import com.yoyo.jingxi.data.entity.Moment;
 import com.yoyo.jingxi.data.entity.RelationshipEdge;
 import com.yoyo.jingxi.data.entity.RelationshipNode;
+import com.yoyo.jingxi.network.ApiUrlBuilder;
 import com.yoyo.jingxi.network.OpenAIManager;
 import com.yoyo.jingxi.network.OpenAiRequest;
 import com.yoyo.jingxi.network.OpenAiResponse;
@@ -105,7 +106,7 @@ public class AutoMomentWorker extends Worker {
 
         OpenAIManager aiManager = new OpenAIManager();
         String apiKey = SpUtils.getString("OPENAI_API_KEY", "");
-        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/");
+        String endpoint = SpUtils.getString("API_ENDPOINT", "https://api.openai.com/v1/");
         String model = SpUtils.getString("API_MODEL", "gpt-4o-mini");
 
         if (apiKey.isEmpty()) return Result.failure();
@@ -245,7 +246,7 @@ public class AutoMomentWorker extends Worker {
 
             request.messages.add(new OpenAiRequest.Message("user", systemPrompt.toString()));
 
-            Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(endpoint + "v1/chat/completions", "Bearer " + apiKey, request).execute();
+            Response<OpenAiResponse> response = aiManager.getApi().createChatCompletion(ApiUrlBuilder.chatCompletions(endpoint), "Bearer " + apiKey, request).execute();
 
             if (response.isSuccessful() && response.body() != null && !response.body().choices.isEmpty()) {
                 String content = response.body().choices.get(0).message.content;

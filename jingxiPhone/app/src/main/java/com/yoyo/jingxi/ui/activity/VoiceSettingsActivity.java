@@ -281,7 +281,7 @@ public class VoiceSettingsActivity extends AppCompatActivity {
         seekBarPitch.setProgress(pitch + 12);
 
         // STT
-        etSttBaseUrl.setText(SpUtils.getString("stt_base_url", "https://api.siliconflow.cn/"));
+        etSttBaseUrl.setText(SpUtils.getString("stt_base_url", "https://api.siliconflow.cn/v1/"));
         etSttApiKey.setText(SpUtils.getString("stt_api_key", ""));
         etSttModel.setText(SpUtils.getString("stt_model", "FunAudioLLM/SenseVoiceSmall"));
 
