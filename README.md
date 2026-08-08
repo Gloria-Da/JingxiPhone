@@ -10,6 +10,14 @@
 [![Android](https://img.shields.io/badge/Android-7.0%2B-blue)](https://developer.android.com)
 [![Language](https://img.shields.io/badge/language-Java-orange)](https://www.java.com)
 
+> ⚠️ **重要通知（2026年8月7日）**
+>
+> 由于盗版事件频发，镜隙自即日起**停止在 GitHub 开源更新**。
+>
+> - 此仓库保留至 **v2.2.1**（MIT 协议），旧版本仍可自由访问和使用
+> - **新版本不再通过 GitHub 发布**，亦不上架任何应用市场
+> - 新版本获取方式请参考下方 [📮 联系](#-联系) 部分
+
 ---
 
 ## ✨ 是什么
@@ -72,9 +80,13 @@
 
 ### 安装
 
-从 [Releases](../../releases) 页面下载最新 APK 文件，直接安装即可。
+旧版本（v2.2.1 及之前）的 APK 仍可在 [Releases](../../releases) 页面下载。
+
+新版本不再通过 GitHub 分发，获取方式见下方联系部分。
 
 ### 自行编译
+
+> 此仓库代码停留在 v2.2.1，不再接收后续更新。仅供历史参考和自行编译旧版本。
 
 ```bash
 git clone https://github.com/Gaoshufen/jingxiPhone.git
@@ -96,7 +108,7 @@ git clone https://github.com/Gaoshufen/jingxiPhone.git
 
 ## ⚠️ 免责声明
 
-本软件仅上传至 GitHub 分享，不通过任何其他渠道分发。允许二次传播与二次修改，使用时请标明原作者。
+本软件旧版本（v2.2.1 及之前）通过 GitHub 发布，基于 MIT 协议开源。允许二次传播与二次修改，须保留原作者署名及版权声明。后续版本为闭源分发。
 
 - **年龄限制**：本应用仅供年满十八周岁及以上的用户使用
 - **内容责任**：请勿输入或生成任何违法、违规、侵权、暴力、仇恨或不当内容。您应对自己的输入行为和生成结果负全部责任
@@ -109,20 +121,22 @@ git clone https://github.com/Gaoshufen/jingxiPhone.git
 
 ## 📄 许可证
 
-本项目采用 [MIT License](./LICENSE) 开源。
+此仓库中的代码（v2.2.1 及之前版本）采用 [MIT License](./LICENSE) 开源。
 
 ### 第三方参考
 
 - **PhotoStack** ([github.com/Wren036/PhotoStack](https://github.com/Wren036/PhotoStack)) — 聊天界面多图堆叠翻页组件的交互设计参考
 
-Copyright © 2024 **Xia youye**
+Copyright © 2024–2026 **Xia youye**
 
 ---
 
 ## 📮 联系
 
-- 🐛 问题反馈：[Issues](../../issues)
-- 💬 答疑 QQ 群：**1106374291**
+- 🐛 旧版本问题反馈：[Issues](../../issues)
+- 📕 新版本获取 & 审核入口：[小红书通告](http://xhslink.cn/o/1aD43T7OA8L)
+
+> 原答疑 QQ 群（1106374291）已不再维护。新版本支持通过审核群提供。
 
 ---
 
