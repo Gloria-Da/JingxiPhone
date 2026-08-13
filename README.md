@@ -89,7 +89,7 @@
 > 此仓库代码停留在 v2.2.1，不再接收后续更新。仅供历史参考和自行编译旧版本。
 
 ```bash
-git clone https://github.com/Gaoshufen/jingxiPhone.git
+git clone https://github.com/Gloria-Da/jingxiPhone.git
 ```
 
 用 Android Studio 打开项目，等待 Gradle 同步完成，然后 Build → Build APK。
